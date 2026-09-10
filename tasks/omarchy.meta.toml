@@ -1,0 +1,18 @@
+# Exact custom metadata pattern.
+[_.tasks."omarchy:hello"]
+icon = "hand"
+risk = "low"
+enabled = true
+tags = ["omarchy"]
+
+[_.tasks."omarchy:bash"]
+icon = "gear"
+risk = "low"
+enabled = true
+tags = ["omarchy","bash"]
+
+[_.tasks."omarchy:python"]
+icon = "snake"
+risk = "low"
+enabled = true
+tags = ["omarchy","python"]

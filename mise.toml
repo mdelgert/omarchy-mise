@@ -1,0 +1,5 @@
+[task_config]
+includes = ["tasks"]
+excludes = [
+    "tasks/**/*.meta.toml"
+]

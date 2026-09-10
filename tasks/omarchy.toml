@@ -1,0 +1,12 @@
+["omarchy:hello"]
+description = "Simple hello task"
+run = "echo hello task"
+
+["omarchy:bash"]
+description = "Task runs bash meta script"
+file = "scripts/bash/all-metadata.sh"
+
+["omarchy:python"]
+description = "Task runs python meta script"
+run = "python scripts/python/all_metadata.py"
+    

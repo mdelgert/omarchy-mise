@@ -47,6 +47,10 @@ Integer, default `1`. A value higher than the plugin understands loads with a wa
 | --- | --- | --- | --- |
 | `label` | string | `""` (U+F487) | Shown in the bar. Any string: a glyph, a word, a letter, an emoji. Trimmed to 80 characters and elided to fit; a blank value falls back to the default. The default is a Nerd Font icon rather than a word — Omarchy pins fontconfig's `monospace` alias to a Nerd Font and draws its own bar and menu icons from that range, so it renders on every Omarchy install. Pick another from the [Nerd Fonts cheat sheet](https://www.nerdfonts.com/cheat-sheet) and paste the glyph, or use a `\uXXXX` / `\UXXXXXXXX` escape. `config.example.toml` lists the icons Omarchy itself uses. |
 | `max_tasks` | integer ≥ 1 | `200` | Hard ceiling on tasks loaded, so a large tree cannot stall the bar. Hitting it adds a `truncated` warning. |
+| `position` | `"center"` or `"widget"` | `"center"` | Where the panel opens. `center` puts it in the middle of the screen just below the bar; `widget` anchors it under the bar button. |
+| `width` | integer ≥ 1 | `420` | Panel width cap in logical pixels. |
+| `height` | integer ≥ 1 | `520` | Panel height cap in logical pixels. A short list still draws short; the host clamps both to what the screen holds. |
+| `font_scale` | number 0.5–3.0 | `1.0` | Multiplies the Omarchy theme's font size. It scales rather than replaces, so the panel keeps following your theme. |
 
 ### `[scan]`
 
@@ -74,6 +78,13 @@ Scanning skips hidden directories and the usual noise: `.git`, `node_modules`,
 
 Patterns are shell globs against the full task name, so `build:*` and `*:deploy` both
 work.
+
+**These filter the browser, not what may run.** A task you exclude disappears from
+the list, but `omarchy-mise run` will still run it by name — the filters are there to
+keep a long list readable, not to make a task unreachable. The control for "ask me
+first" is `run.confirm_risk` below; there is deliberately no setting that forbids a
+task outright, because a glob in a config file you can edit is not a permission
+system and should not be mistaken for one.
 
 ### `[run]`
 
@@ -106,6 +117,28 @@ variables and run hooks, which is the user's decision to make deliberately.
 
 Metadata in a `*.meta.toml` sidecar is read directly and needs no trust — only the
 task list itself comes from mise.
+
+## Argument prompts
+
+A task that declares a `usage` string gets a field per argument when you run it from
+the browser, pre-filled with any default. Required, optional, variadic, flag, switch
+and choice arguments are all understood.
+
+Three notes on the edges:
+
+- **Properties the editor does not need are ignored, not rejected.** `count`, `env`,
+  `var_min`, `var_max` and `(type)` annotations parse fine; the argument still shows
+  up with its help text and default. Nothing is lost, because none of them change
+  what a value-collecting form has to ask for.
+- **A slashdash-commented node (`/-arg ...`) is not understood** and fails the whole
+  spec for that task. The task still lists and still runs — it just gets no argument
+  form, and the catalog reports `usage: unexpected character '/'` against it.
+- **An unparseable `usage` never breaks the catalog.** It becomes an `error` on that
+  one task, like a project that cannot be read, and every other task still loads.
+
+If you hit the slashdash case, delete the commented-out node rather than working
+around it; it is rare enough that support has not been written, and a wrong guess at
+the semantics would be worse than the current honest failure.
 
 ## Task metadata
 

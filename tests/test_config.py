@@ -123,3 +123,59 @@ class ConfigTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class PanelAppearanceTests(unittest.TestCase):
+    """ui.position / width / height / font_scale, added so the panel is not
+    stuck wherever the widget happens to sit."""
+
+    def write(self, body: str) -> Path:
+        directory = Path(self.enterContext(tempfile.TemporaryDirectory()))
+        target = directory / "config.toml"
+        target.write_text(body, encoding="utf-8")
+        return target
+
+    def test_defaults_centre_the_panel(self) -> None:
+        ui = config.defaults()["ui"]
+        self.assertEqual("center", ui["position"])
+        self.assertEqual(1.0, ui["font_scale"])
+
+    def test_position_accepts_the_documented_values(self) -> None:
+        for value in config.POSITIONS:
+            with self.subTest(value):
+                resolved = config.load(self.write(f'[ui]\nposition = "{value}"\n'))
+                self.assertEqual(value, resolved["ui"]["position"])
+
+    def test_position_is_case_and_space_insensitive(self) -> None:
+        resolved = config.load(self.write('[ui]\nposition = "  Center "\n'))
+        self.assertEqual("center", resolved["ui"]["position"])
+
+    def test_an_unknown_position_names_the_valid_ones(self) -> None:
+        with self.assertRaises(config.ConfigError) as caught:
+            config.load(self.write('[ui]\nposition = "bottom-left"\n'))
+        self.assertIn("center", str(caught.exception))
+
+    def test_font_scale_accepts_an_integer(self) -> None:
+        # `font_scale = 2` is what someone will actually type.
+        resolved = config.load(self.write("[ui]\nfont_scale = 2\n"))
+        self.assertEqual(2.0, resolved["ui"]["font_scale"])
+
+    def test_font_scale_is_bounded(self) -> None:
+        low, high = config.FONT_SCALE_RANGE
+        for value in (low - 0.1, high + 0.1, 0):
+            with self.subTest(value), self.assertRaises(config.ConfigError):
+                config.load(self.write(f"[ui]\nfont_scale = {value}\n"))
+
+    def test_font_scale_rejects_a_boolean(self) -> None:
+        with self.assertRaises(config.ConfigError):
+            config.load(self.write("[ui]\nfont_scale = true\n"))
+
+    def test_size_must_be_positive(self) -> None:
+        for key in ("width", "height"):
+            with self.subTest(key), self.assertRaises(config.ConfigError):
+                config.load(self.write(f"[ui]\n{key} = 0\n"))
+
+    def test_size_overrides_apply(self) -> None:
+        resolved = config.load(self.write("[ui]\nwidth = 600\nheight = 300\n"))
+        self.assertEqual(600, resolved["ui"]["width"])
+        self.assertEqual(300, resolved["ui"]["height"])

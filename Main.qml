@@ -58,6 +58,7 @@ BarWidget {
         if ("anchorItem" in target) target.anchorItem = button
         if ("hostWidget" in target) target.hostWidget = root
         if ("catalog" in target) target.catalog = root.catalog
+        if ("config" in target) target.config = config
     }
 
     // Shape contract for shell.summon/hide/toggle routing: Bar.findPanelWidget

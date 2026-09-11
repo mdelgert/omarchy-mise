@@ -30,6 +30,20 @@ DEFAULTS: dict[str, Any] = {
         # `DEFAULT_LABEL` in services/Plugin.js must match; test_config.py
         # fails if they drift.
         "label": "\uf487",
+        # Where the panel opens. "center" puts it in the middle of the screen
+        # the bar is on; "widget" anchors it under the bar button, which is
+        # wherever the user placed the widget. Centre is the default because
+        # the panel is a list you read, not a tooltip for the button.
+        "position": "center",
+        # Panel size in logical pixels, before the host clamps it to what the
+        # screen can hold. These are caps, not fixed sizes: a short list still
+        # draws short.
+        "width": 420,
+        "height": 520,
+        # Multiplies the Omarchy theme's font size rather than replacing it,
+        # so the panel keeps following the theme -- and a user who has already
+        # scaled their desktop does not have to undo it here.
+        "font_scale": 1.0,
         # Upper bound on tasks held in memory, so a huge tree cannot stall the bar.
         "max_tasks": 200,
     },
@@ -64,13 +78,33 @@ DEFAULTS: dict[str, Any] = {
 
 #: section -> key -> (python type, coercion/validation hint)
 _SPEC: dict[str, dict[str, type | tuple[type, ...]]] = {
-    "ui": {"label": str, "max_tasks": int},
+    "ui": {
+        "label": str,
+        "max_tasks": int,
+        "position": str,
+        "width": int,
+        "height": int,
+        "font_scale": float,
+    },
     "scan": {"directories": list, "max_depth": int, "follow_symlinks": bool},
     "tasks": {"include": list, "exclude": list, "hidden": bool},
     "run": {"timeout_seconds": int, "confirm_risk": list},
 }
 
-_POSITIVE_INTS = {("ui", "max_tasks"), ("scan", "max_depth"), ("run", "timeout_seconds")}
+_POSITIVE_INTS = {
+    ("ui", "max_tasks"),
+    ("ui", "width"),
+    ("ui", "height"),
+    ("scan", "max_depth"),
+    ("run", "timeout_seconds"),
+}
+
+#: Where the panel may open.
+POSITIONS = ("center", "widget")
+
+#: Bounds on ui.font_scale. Below this the panel is unreadable; above it a
+#: single row no longer fits the screen, and the host clamps it anyway.
+FONT_SCALE_RANGE = (0.5, 3.0)
 _STRING_LISTS = {
     ("scan", "directories"),
     ("tasks", "include"),
@@ -97,6 +131,10 @@ def defaults() -> dict[str, Any]:
 
 def _check(section: str, key: str, value: Any) -> Any:
     expected = _SPEC[section][key]
+    # `font_scale = 2` is a perfectly reasonable thing to write in TOML, so a
+    # float field takes an int too -- but not a bool, which is also an int.
+    if expected is float and isinstance(value, int) and not isinstance(value, bool):
+        value = float(value)
     # bool is a subclass of int; an int field must not silently accept `true`.
     if expected is int and isinstance(value, bool):
         raise ConfigError(f"{section}.{key} must be an integer, got a boolean")
@@ -110,6 +148,16 @@ def _check(section: str, key: str, value: Any) -> Any:
             if not isinstance(item, str) or not item.strip():
                 raise ConfigError(f"{section}.{key} must contain only non-empty strings")
         return [item.strip() for item in value]
+    if (section, key) == ("ui", "position"):
+        cleaned = value.strip().lower()
+        if cleaned not in POSITIONS:
+            raise ConfigError(f"ui.position must be one of {', '.join(POSITIONS)}, got {value!r}")
+        return cleaned
+    if (section, key) == ("ui", "font_scale"):
+        low, high = FONT_SCALE_RANGE
+        if not low <= value <= high:
+            raise ConfigError(f"ui.font_scale must be between {low} and {high}, got {value}")
+        return float(value)
     if section == "ui" and key == "label":
         return value.strip()[:80] or DEFAULTS["ui"]["label"]
     return value

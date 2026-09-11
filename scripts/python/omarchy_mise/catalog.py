@@ -20,7 +20,7 @@ import tomllib
 from typing import Any
 
 from . import config as config_module
-from . import paths
+from . import paths, usage
 
 SCHEMA_VERSION = 1
 
@@ -201,6 +201,23 @@ def read_tasks(project: Path, *, hidden: bool = False) -> list[dict[str, Any]]:
     return [{field: task.get(field) for field in TASK_FIELDS} for task in raw]
 
 
+def attach_arguments(task: dict[str, Any]) -> str | None:
+    """Add the task's parsed `usage` arguments, returning any parse failure.
+
+    mise hands back a task's `usage` string without validating it, so an
+    invalid spec reaches the catalog intact. That is the same shape of problem
+    as a project that cannot be read: it becomes an `error` on the one entry it
+    affects and leaves every other task in the payload usable.
+    """
+    try:
+        task["arguments"] = usage.parse(task.get("usage"))
+    except usage.UsageError as error:
+        task["arguments"] = []
+        task["error"] = f"usage: {error}"
+        return task["error"]
+    return None
+
+
 def _matches(name: str, patterns: list[str]) -> bool:
     return any(fnmatch.fnmatch(name, pattern) for pattern in patterns)
 
@@ -264,6 +281,9 @@ def build(config: dict[str, Any] | None = None) -> dict[str, Any]:
                     truncated = True
                     break
                 task["metadata"] = metadata.get(task.get("name") or "", {})
+                unparsed = attach_arguments(task)
+                if unparsed:
+                    warnings.append(f"{project}: {task.get('name')}: {unparsed}")
                 entry["tasks"].append(task)
                 total += 1
             projects.append(entry)

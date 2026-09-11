@@ -125,7 +125,7 @@ on a vertical bar; focus returns cleanly to the compositor on close.
 
 ---
 
-## R4 — Run a task — 4a ✅ done, 4b remaining
+## R4 — Run a task ✅ done
 
 **Scope.** Run the selected task from the list and report the outcome.
 
@@ -147,7 +147,7 @@ process survives the shell restarting.
 
 ---
 
-## R5 — Task arguments — 5a ✅ done, 5b remaining
+## R5 — Task arguments ✅ done
 
 **Scope.** Prompt for the arguments a task declares in its `usage` string.
 
@@ -171,7 +171,7 @@ accepts an override.
 
 ---
 
-## R6 — Shell action and documented binding
+## R6 — Shell action and documented binding ✅ done
 
 **Scope.** Expose summon/toggle as Omarchy shell actions.
 

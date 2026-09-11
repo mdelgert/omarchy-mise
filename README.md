@@ -28,9 +28,26 @@ projects:
 That writes `~/.config/omarchy-mise/config.toml`. From a development checkout the
 same command is `bin/omarchy-mise config --init`, or `mise run omarchy:config-init`.
 
-See [docs/CONFIGURATION.md](docs/CONFIGURATION.md) for every setting. The plugin
-installs no global keybinding; interactive surfaces will be exposed as shell actions
-you can bind yourself.
+See [docs/CONFIGURATION.md](docs/CONFIGURATION.md) for every setting.
+
+### Opening it with a key
+
+The plugin installs no keybinding of its own — it would collide with an Omarchy
+default or with one of yours. Bind it yourself in `~/.config/hypr/bindings.lua`:
+
+```lua
+o.bind("SUPER + SHIFT + M", "Mise tasks", "omarchy-shell shell toggle io.github.mdelgert.omarchy-mise")
+```
+
+Go through `shell toggle`, not the plugin's own IPC target: the host resolves which
+copy to act on, preferring one that is already open and otherwise the focused
+monitor's. A bar widget exists per screen, so addressing the plugin directly reaches
+whichever instance happened to register first.
+
+`shell summon` and `shell hide` work the same way. The plugin also answers
+`omarchy-shell io.github.mdelgert.omarchy-mise refresh`, which rebuilds the task
+catalog — useful after adding a task to a project. One catalog is shared by every
+screen, so that is a single rebuild however many monitors you have.
 
 Remove it with `omarchy plugin remove io.github.mdelgert.omarchy-mise`.
 

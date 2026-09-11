@@ -41,13 +41,15 @@ Item {
   // The task will not run until someone confirms. `request` describes what.
   signal confirmationRequired(var request)
 
-  function run(projectPath, taskName, args, confirmed) {
+  // `values` is a {argument name: value} map; the CLI orders it into argv
+  // against the task's own usage spec.
+  function run(projectPath, taskName, values, confirmed) {
     if (running)
       return
     root.request = {
       project: String(projectPath || ""),
       task: String(taskName || ""),
-      args: args || [],
+      values: values || ({}),
       confirmed: confirmed === true
     }
     root.result = null
@@ -61,7 +63,7 @@ Item {
   function confirm() {
     if (!root.request)
       return
-    run(root.request.project, root.request.task, root.request.args, true)
+    run(root.request.project, root.request.task, root.request.values, true)
   }
 
   // The user declined the confirmation. The CLI's refusal text explains a
@@ -85,13 +87,14 @@ Item {
     var args = ["--json", "run"]
     if (spec.confirmed)
       args.push("--confirm")
-    args.push(spec.project, spec.task)
-    if (spec.args.length > 0) {
-      // Anything that looks like a flag belongs to the task, not to us.
-      args.push("--")
-      for (var i = 0; i < spec.args.length; i++)
-        args.push(String(spec.args[i]))
+    for (var name in spec.values) {
+      // Declared-but-empty is sent too. Dropping it here would hide a blank
+      // required argument from the CLI's own check, and mise would fail with
+      // its own three-line error instead of one line naming the field.
+      // to_argv omits blanks from the final argv either way.
+      args.push("--arg", name + "=" + String(spec.values[name] || ""))
     }
+    args.push(spec.project, spec.task)
     return Plugin.cli(Qt.resolvedUrl("."), args)
   }
 

@@ -35,13 +35,44 @@ Panel {
         ? rows[list.currentIndex]
         : null
 
+    // The task whose arguments are being filled in, or null when none is.
+    property var editing: null
+
     function runSelected() {
         const row = selectedRow
         // An unusable project has no task to run, and a run already in flight
         // owns the runner until it finishes.
         if (!row || !row.task || runner.running)
             return
-        runner.run(row.project.path, row.task.name, [], false)
+        // A task that declares arguments gets the editor first; one that does
+        // not runs straight away rather than showing an empty form.
+        const declared = row.task.arguments
+        if (Array.isArray(declared) && declared.length > 0 && editing !== row.task) {
+            editing = row.task
+            Qt.callLater(editor.focusFirst)
+            return
+        }
+        runEditing(row)
+    }
+
+    function runEditing(row) {
+        const values = editing === row.task ? editor.values : ({})
+        editing = null
+        // The editor's field is about to be hidden; hand focus back or the
+        // next keystroke lands on an invisible item and appears to do nothing.
+        filterField.forceActiveFocus()
+        runner.run(row.project.path, row.task.name, values, false)
+    }
+
+    function commitEditor() {
+        const row = selectedRow
+        if (row && row.task)
+            runEditing(row)
+    }
+
+    function cancelEditor() {
+        editing = null
+        filterField.forceActiveFocus()
     }
 
     readonly property string fontFamily: bar ? bar.fontFamily : Style.font.family
@@ -110,6 +141,13 @@ Panel {
     // Re-filtering changes what row 0 means, so anchor the selection rather
     // than leaving it pointing past the end of a shorter list.
     onRowsChanged: list.currentIndex = rows.length > 0 ? 0 : -1
+
+    // Moving off a task abandons its half-filled form rather than carrying
+    // the values onto whatever is selected next.
+    onSelectedRowChanged: {
+        if (editing && (!selectedRow || selectedRow.task !== editing))
+            editing = null
+    }
 
     onOpenedChanged: {
         if (!opened)
@@ -271,6 +309,19 @@ Panel {
                     color: Qt.darker(root.foreground, 1.4)
                     font.family: root.fontFamily
                     font.pixelSize: Style.font.body
+                }
+
+                ParameterEditor {
+                    id: editor
+
+                    width: parent.width
+                    visible: root.editing !== null
+                    task: root.editing
+                    foreground: root.foreground
+                    fontFamily: root.fontFamily
+
+                    onAccepted: root.commitEditor()
+                    onCancelled: root.cancelEditor()
                 }
 
                 TaskStatus {

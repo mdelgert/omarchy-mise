@@ -189,8 +189,7 @@ Item {
   // plugin is unsandboxed -- so `omarchy plugin add` cannot create the config
   // file. The first time the service loads is the earliest moment this plugin
   // can, and `config --init` never clobbers an existing file, so running it on
-  // every startup is idempotent. Independent of the first refresh: a config
-  // that cannot be written is a worse list, never no list.
+  // every startup is idempotent.
   Process {
     id: seedConfig
 
@@ -204,11 +203,19 @@ Item {
       if (exitCode !== 0)
         console.warn("omarchy-mise", "config --init:",
                      String(seedConfig.stderr.text || "").trim() || "exited " + exitCode)
+      // Refresh again now the file is on disk. `scan.directories` has no
+      // built-in default, so on a first run the refresh below started against
+      // an empty list and found nothing; without this the bar would show no
+      // tasks until the heartbeat or the first time the panel is opened.
+      // refresh() cancels the one in flight, so the freshest answer wins.
+      root.refresh()
     }
   }
 
   Component.onCompleted: {
     seedConfig.running = true
+    // Started without waiting: a config that cannot be written must still
+    // produce a list, and on every run but the first the file already exists.
     root.refresh()
   }
 

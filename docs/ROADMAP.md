@@ -66,7 +66,7 @@ mind for future work of that shape; it does not apply to what is left here.
 
 **Scope.** Make the widget show `ui.label` from `config.toml` instead of only the
 host's inline `settings` entry. Precedence: host setting, then config file, then
-`"Mise"`.
+the built-in default.
 
 **Files.** `Main.qml`; a new `services/Config.qml`.
 

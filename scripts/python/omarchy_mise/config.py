@@ -20,7 +20,16 @@ DEFAULTS: dict[str, Any] = {
     "schema_version": SCHEMA_VERSION,
     "ui": {
         # Bar label. Kept short; the widget elides anything longer.
-        "label": "Mise",
+        #
+        # A glyph rather than a word. Omarchy pins fontconfig's `monospace`
+        # alias to a Nerd Font, and its own bar widgets and menu draw their
+        # icons from that range, so this renders on every Omarchy install
+        # without shipping a font. U+F487 is a rocket, one of the glyphs
+        # Omarchy's own menu draws. Any string works -- a word, a letter, an
+        # emoji -- and `config.example.toml` says how to change it.
+        # `DEFAULT_LABEL` in services/Plugin.js must match; test_config.py
+        # fails if they drift.
+        "label": "\uf487",
         # Upper bound on tasks held in memory, so a huge tree cannot stall the bar.
         "max_tasks": 200,
     },

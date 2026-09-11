@@ -10,6 +10,10 @@ The plugin reads one optional TOML file:
 entirely. Nothing is ever written inside the installed plugin, so a reinstall or an
 upgrade cannot lose your settings.
 
+The plugin writes this file itself, so neither command below is a required step —
+`--init` is there to recreate a file you deleted, and to see the template without
+waiting for a shell restart:
+
 ```sh
 bin/omarchy-mise config --init    # copy the documented template into place
 bin/omarchy-mise config           # show what actually resolved
@@ -41,7 +45,7 @@ Integer, default `1`. A value higher than the plugin understands loads with a wa
 
 | Key | Type | Default | Meaning |
 | --- | --- | --- | --- |
-| `label` | string | `"Mise"` | Bar text. Trimmed to 80 characters and elided to fit. A blank value falls back to the default. |
+| `label` | string | `""` (U+F487) | Shown in the bar. Any string: a glyph, a word, a letter, an emoji. Trimmed to 80 characters and elided to fit; a blank value falls back to the default. The default is a Nerd Font icon rather than a word — Omarchy pins fontconfig's `monospace` alias to a Nerd Font and draws its own bar and menu icons from that range, so it renders on every Omarchy install. Pick another from the [Nerd Fonts cheat sheet](https://www.nerdfonts.com/cheat-sheet) and paste the glyph, or use a `\uXXXX` / `\UXXXXXXXX` escape. `config.example.toml` lists the icons Omarchy itself uses. |
 | `max_tasks` | integer ≥ 1 | `200` | Hard ceiling on tasks loaded, so a large tree cannot stall the bar. Hitting it adds a `truncated` warning. |
 
 ### `[scan]`

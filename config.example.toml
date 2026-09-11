@@ -13,14 +13,27 @@
 schema_version = 1
 
 [ui]
-# Text shown in the bar. Trimmed to 80 characters and elided to fit.
-# Can be any string, including Unicode characters.
-# This can be a single character, an emoji, or any other Unicode symbol.
-# For example, you could use an emoji like "🚀" or a single letter like "M".
-# https://www.nerdfonts.com/cheat-sheet
-# label = "Mise"
-#label = "\uf120"
-label = "󰑷"
+# Shown in the bar. Any string works: a glyph, a word, a single letter, an
+# emoji. Trimmed to 80 characters and elided to fit.
+#
+# The default is an icon rather than a word. Omarchy pins fontconfig's
+# `monospace` alias to a Nerd Font and draws its own bar and menu icons from
+# that range, so any Nerd Font glyph renders on every Omarchy install.
+#
+# Browse and copy one from the cheat sheet, then paste it between the quotes:
+#     https://www.nerdfonts.com/cheat-sheet
+# A `\uXXXX` or `\UXXXXXXXX` escape works too, if pasting a glyph is awkward:
+#     label = "\uF487"   # identical to the default below
+#
+# Icons Omarchy itself uses, if you want one that matches the rest of the bar:
+#     label = ""   # rocket         -- the default
+#     label = "󱓞"   # rocket launch  (Omarchy's "Trigger")
+#     label = ""   # process        (Omarchy's "Process")
+#     label = ""   # cog / service  (Omarchy's "Service")
+#     label = "󰵮"   # code braces    (Omarchy's "Development")
+#     label = "󰍜"   # list           (Omarchy's "Menu Bar")
+#     label = "Mise"    # plain text, if you would rather have a word
+label = ""
 
 # Hard ceiling on how many tasks are loaded, so a large tree cannot stall the bar.
 max_tasks = 200

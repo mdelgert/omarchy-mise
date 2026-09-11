@@ -30,6 +30,13 @@ All notable changes to this project are documented here. Versions follow
 
 ### Changed
 
+- The bar label defaults to an icon instead of the word "Mise": U+F487, a rocket and
+  one of the glyphs Omarchy's own menu draws. Omarchy pins
+  fontconfig's `monospace` alias to a Nerd Font and draws its own bar and menu icons
+  from that range, so it renders everywhere without this plugin shipping a font. Any
+  string still works, and `config.example.toml` links the Nerd Fonts cheat sheet and
+  lists the icons Omarchy itself uses. `DEFAULT_LABEL` in `services/Plugin.js` is the
+  QML-side fallback; a test fails if it drifts from the Python default.
 - `scan.directories` no longer has a built-in default. Guessing at a layout meant
   scanning directories the user never named, so the list now starts empty in Python
   and the starter `config.example.toml` is the only place a path is suggested — it

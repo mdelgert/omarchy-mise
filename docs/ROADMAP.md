@@ -12,64 +12,55 @@ scope, the files it touches, and how to know it is finished. Every item inherits
 rules in [AGENTS.md](../AGENTS.md) and finishes with `mise run omarchy:check-desktop`
 passing plus a visual check on a running bar.
 
-## Working in parallel
+## How to pick up the next item
 
-The items below form a dependency chain, so handing R1–R7 to seven agents produces
-seven conflicting edits to `Main.qml`. Split by *file ownership* instead. Three lanes
-never touch the same file:
+Everything that could run in parallel already has. Lanes B and C are merged, and
+what remains — 4b, 5b, R6, R7 — is one sequential chain: 5b needs 4b, and all of it
+edits `services/` and `components/`. **Do not fan these out to parallel agents.**
+Two concrete reasons, beyond the dependency order:
 
-| Lane | Owns | Items | Needs a desktop |
-| --- | --- | --- | --- |
-| **A — QML** | `Main.qml`, `services/`, `components/` | ~~R1 → R2 → R3~~ → 4b → 5b → R6 | Yes |
-| **B — argument parser** | `scripts/python/omarchy_mise/usage.py` | ~~5a~~ | No |
-| **C — task runner** | `scripts/python/omarchy_mise/runner.py` | ~~4a~~ | No |
+- **Only one working tree can hold the plugin install.** The plugin id is unique, so
+  `omarchy:install` from a second worktree relinks the first one out. Two agents
+  doing QML would fight over the desktop.
+- **QML fails at runtime in ways the linter cannot see.** Every item in this chain so
+  far shipped a bug that `omarchy:check-desktop` passed happily: a delegate reading
+  `ListView.view` from a nested child (null at runtime), a filter field that never
+  received focus because `KeyboardPanel` overwrites `focusTarget` on a `callLater`,
+  and three panels cancelling each other through the bar's single `activePopout`. An
+  agent that only lints will hand you something plausible and broken.
 
-**Where things stand.** R1, R2, R3, 4a and 5a are merged. What remains is the QML
-half of running a task (4b), the argument editor (5b), the documented binding (R6),
-and the release (R7) — all of it lane A, all of it sequential, and all of it needing
-a desktop. The data layer beneath it is complete: `omarchy-mise catalog` reports
-every task with structured `arguments`, and `omarchy-mise run` executes one safely.
-
-Lane A is strictly sequential: each item establishes something the next one uses, and
-R1 exists to set the process-ownership pattern the rest copy. Lanes B and C are pure
-Python with tests and can start immediately, in parallel with each other and with
-lane A.
-
-Both Python lanes touch `cli.py` to register a subcommand and `catalog.py` or its
-payload, so keep those edits additive and expect a small merge there. Nothing else
-overlaps.
-
-Two constraints on running lanes concurrently:
-
-- **Only one working tree can be installed at a time.** The plugin id is unique, so
-  `omarchy:install` from a second worktree relinks the first one out. Give the
-  install to whichever lane is doing QML; the Python lanes never need it.
-- **Visual verification is not parallelisable and is not an agent's job.** An agent
-  can get `omarchy:check-desktop` to pass; only a person can confirm the widget looks
-  right on a real bar. Merge a QML lane only after you have seen it running.
-
-Give each lane its own git worktree so the trees cannot collide:
+So: one branch per item, one at a time, verified on a real bar before merging.
 
 ```sh
-claude --worktree lane-b            # new worktree + branch + session
-# or, by hand:
-git worktree add ../omarchy-mise-lane-b -b lane/usage-parser
-cd ../omarchy-mise-lane-b && mise install && claude
+git switch dev && git pull
+git switch -c lane/4b-run-task        # one branch per roadmap item
+mise install                          # once per checkout
+mise run omarchy:install              # symlink + enable; edits are then live
 ```
 
-Run one in the background and check on it later:
+Then the loop, for every change:
 
 ```sh
-claude --bg --worktree lane-c "Implement roadmap item 4a in docs/ROADMAP.md."
-claude agents        # list background sessions
-claude logs <id>     # read its output
-claude attach <id>   # take it over interactively
+mise run omarchy:check                # portable gate
+mise run omarchy:check-desktop        # validator + qmllint on every QML file
+mise run omarchy:restart              # QML changes need a restart, not a rescan
+mise run omarchy:logs                 # watch for runtime errors
 ```
 
-Each lane finishes the same way any change does: `mise run omarchy:check` green, a
-test for every behaviour, a `CHANGELOG.md` entry, then merge to `dev`.
+**Then actually use it.** Open the panel, click the thing, type in the field, try it
+on a second monitor. A screenshot is evidence; a passing lint is not. `wtype` sends
+real keystrokes and `grim -g "<x>,<y> <w>x<h>"` captures a region, which is how the
+current surface was verified.
 
----
+Finish by merging to `dev` with the gates green, then `mise run omarchy:uninstall`
+if you are done on this machine.
+
+## Parallelism, for the record
+
+Earlier work split into three lanes by file ownership — QML, `usage.py`, `runner.py`
+— run as concurrent agents in separate git worktrees. That worked because two of the
+three lanes were pure Python with tests and needed no desktop. Keep the pattern in
+mind for future work of that shape; it does not apply to what is left here.
 
 ## R1 — Read the configured label ✅ done
 
@@ -134,7 +125,7 @@ on a vertical bar; focus returns cleanly to the compositor on close.
 
 ---
 
-## R4 — Run a task — 4a ✅ done, 4b remaining
+## R4 — Run a task ✅ done
 
 **Scope.** Run the selected task from the list and report the outcome.
 
@@ -156,7 +147,7 @@ process survives the shell restarting.
 
 ---
 
-## R5 — Task arguments — 5a ✅ done, 5b remaining
+## R5 — Task arguments ✅ done
 
 **Scope.** Prompt for the arguments a task declares in its `usage` string.
 
@@ -180,7 +171,7 @@ accepts an override.
 
 ---
 
-## R6 — Shell action and documented binding
+## R6 — Shell action and documented binding ✅ done
 
 **Scope.** Expose summon/toggle as Omarchy shell actions.
 

@@ -354,3 +354,38 @@ class CliTests(RunnerTestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class ValuesTests(unittest.TestCase):
+    """Running with `{name: value}` instead of ready-made argv, which is what
+    the argument editor collects."""
+
+    def setUp(self) -> None:
+        self.root = Path(self.enterContext(tempfile.TemporaryDirectory()))
+        (self.root / "mise.toml").write_text(
+            "[tasks.greet]\n"
+            'usage = \'arg "<name>" help="Who"\'\n'
+            "run = 'echo \"hello ${usage_name:?}\"'\n",
+            encoding="utf-8",
+        )
+        self.env = mock.patch.dict(os.environ, {"MISE_TRUSTED_CONFIG_PATHS": str(self.root)})
+        self.env.start()
+        self.addCleanup(self.env.stop)
+
+    def test_a_value_becomes_a_positional_argument(self) -> None:
+        result = runner.run(self.root, "greet", values={"name": "Omarchy"})
+        self.assertEqual("succeeded", result["status"], result)
+        self.assertEqual("Omarchy", result["argv"][-1])
+        self.assertIn("hello Omarchy", result["stdout"])
+
+    def test_a_blank_required_value_is_refused_before_mise_sees_it(self) -> None:
+        result = runner.run(self.root, "greet", values={"name": "   "})
+        self.assertEqual("refused", result["status"])
+        self.assertEqual(runner.REASON_MISSING_ARGUMENT, result["reason"])
+        self.assertIn("name", result["error"])
+        # Refusing means refusing: nothing was spawned.
+        self.assertEqual([], result["argv"])
+
+    def test_values_and_argv_can_be_combined(self) -> None:
+        result = runner.run(self.root, "greet", ["extra"], values={"name": "Omarchy"})
+        self.assertEqual(["Omarchy", "extra"], result["argv"][-2:])

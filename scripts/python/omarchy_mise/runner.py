@@ -28,7 +28,7 @@ import threading
 import time
 from typing import Any
 
-from . import catalog, paths
+from . import catalog, paths, usage
 from . import config as config_module
 
 SCHEMA_VERSION = 1
@@ -57,6 +57,7 @@ STATUS_REFUSED = "refused"
 #: them to decide between an error and a confirmation prompt.
 REASON_UNKNOWN_PROJECT = "unknown-project"
 REASON_UNKNOWN_TASK = "unknown-task"
+REASON_MISSING_ARGUMENT = "missing-argument"
 REASON_UNTRUSTED = "untrusted"
 REASON_UNREADABLE = "unreadable"
 REASON_CONFIRMATION_REQUIRED = "confirmation-required"
@@ -210,18 +211,27 @@ def run(
     task: str,
     args: list[str] | tuple[str, ...] = (),
     *,
+    values: dict[str, str] | None = None,
     settings: dict[str, Any] | None = None,
     confirm: bool = False,
     timeout: float | None = None,
     max_output_bytes: int = MAX_OUTPUT_BYTES,
 ) -> dict[str, Any]:
-    """Run `task` in `project` and return the outcome as a JSON-ready dict."""
+    """Run `task` in `project` and return the outcome as a JSON-ready dict.
+
+    Callers pass either `args` (argv, already ordered) or `values` (a
+    `{argument name: value}` mapping, as an argument editor collects them).
+    `values` is turned into argv against the task's own parsed `usage`, so the
+    caller never has to know whether an argument is positional, which spelling
+    a flag declared, or what order they go in.
+    """
     resolved = settings if settings is not None else config_module.load()
     limit = resolve_timeout(resolved, timeout)
     # Absolute, but not symlink-resolved: the catalog reports the path it
     # scanned, and the result has to be recognisable as the same project.
     directory = Path(os.path.abspath(paths.expand(project)))
     arguments = [str(item) for item in args]
+    supplied = dict(values or {})
 
     def refuse(reason: str, error: str, **extra: Any) -> dict[str, Any]:
         extra.setdefault("task", task)
@@ -252,6 +262,26 @@ def run(
         return refuse(REASON_UNKNOWN_TASK, f"no task named '{task}' in {directory}")
 
     name = str(entry.get("name") or task)
+
+    # An editor supplies values by argument name; turn them into argv against
+    # the task's own usage spec. Refusing here means a required argument left
+    # blank never reaches mise as a confusing failure.
+    if supplied:
+        # read_tasks returns the raw mise fields; only catalog.build() attaches
+        # parsed arguments, so this entry needs them attached explicitly.
+        catalog.attach_arguments(entry)
+        declared = entry.get("arguments")
+        if not isinstance(declared, list):
+            declared = []
+        blank = usage.missing_required(declared, supplied)
+        if blank:
+            return refuse(
+                REASON_MISSING_ARGUMENT,
+                f"'{name}' requires a value for: {', '.join(blank)}",
+                task=name,
+            )
+        arguments = usage.to_argv(declared, supplied) + arguments
+
     metadata = catalog.read_metadata(directory).get(name, {})
     risk = metadata.get("risk")
     risk = risk if isinstance(risk, str) else None

@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Controls
 import qs.Commons
 import qs.Ui
+import "../services" as Services
 
 // Read-only browser for the tasks the catalog service found.
 //
@@ -27,6 +28,52 @@ Panel {
     manageIpc: false
 
     property string filter: ""
+
+    // The row the user would act on, or null when the list is empty or the
+    // selection sits on a project that cannot be read.
+    readonly property var selectedRow: list.currentIndex >= 0 && list.currentIndex < rows.length
+        ? rows[list.currentIndex]
+        : null
+
+    // The task whose arguments are being filled in, or null when none is.
+    property var editing: null
+
+    function runSelected() {
+        const row = selectedRow
+        // An unusable project has no task to run, and a run already in flight
+        // owns the runner until it finishes.
+        if (!row || !row.task || runner.running)
+            return
+        // A task that declares arguments gets the editor first; one that does
+        // not runs straight away rather than showing an empty form.
+        const declared = row.task.arguments
+        if (Array.isArray(declared) && declared.length > 0 && editing !== row.task) {
+            editing = row.task
+            Qt.callLater(editor.focusFirst)
+            return
+        }
+        runEditing(row)
+    }
+
+    function runEditing(row) {
+        const values = editing === row.task ? editor.values : ({})
+        editing = null
+        // The editor's field is about to be hidden; hand focus back or the
+        // next keystroke lands on an invisible item and appears to do nothing.
+        filterField.forceActiveFocus()
+        runner.run(row.project.path, row.task.name, values, false)
+    }
+
+    function commitEditor() {
+        const row = selectedRow
+        if (row && row.task)
+            runEditing(row)
+    }
+
+    function cancelEditor() {
+        editing = null
+        filterField.forceActiveFocus()
+    }
 
     readonly property string fontFamily: bar ? bar.fontFamily : Style.font.family
     readonly property color foreground: bar ? bar.barForeground : Color.foreground
@@ -95,6 +142,13 @@ Panel {
     // than leaving it pointing past the end of a shorter list.
     onRowsChanged: list.currentIndex = rows.length > 0 ? 0 : -1
 
+    // Moving off a task abandons its half-filled form rather than carrying
+    // the values onto whatever is selected next.
+    onSelectedRowChanged: {
+        if (editing && (!selectedRow || selectedRow.task !== editing))
+            editing = null
+    }
+
     onOpenedChanged: {
         if (!opened)
             return
@@ -102,6 +156,28 @@ Panel {
         // refresh — and the only automatic one besides the slow heartbeat.
         if (catalog && typeof catalog.refresh === "function" && !catalog.loading)
             catalog.refresh()
+    }
+
+    Services.TaskRunner {
+        id: runner
+
+        onConfirmationRequired: function (request) {
+            // The CLI refused and spawned nothing. Ask, and only retry if the
+            // answer is yes.
+            // Name the level the task actually carries. Hardcoding "high"
+            // was wrong for anyone whose run.confirm_risk lists another level.
+            const level = runner.result && runner.result.risk
+                ? String(runner.result.risk)
+                : "risky"
+            confirmDialog.message = "Run " + request.task + "?\n"
+                + "It is marked " + level + " risk in this project's task metadata."
+            confirmDialog.selectedIndex = 0
+            confirmDialog.opened = true
+        }
+        onFinished: function (result) {
+            if (result && result.ok !== true)
+                console.warn("omarchy-mise", "run failed:", result.error || result.status)
+        }
     }
 
     KeyboardPanel {
@@ -133,6 +209,30 @@ Panel {
             }
             onCloseRequested: root.close()
             onTabRequested: function (direction) { root.switchPanel(direction) }
+            onActivateRequested: root.runSelected()
+
+            // While the dialog is up it owns the keyboard, so a stray Enter
+            // cannot reach the list and start a second run behind it.
+            blocked: confirmDialog.opened
+
+            ConfirmDialog {
+                id: confirmDialog
+
+                anchors.fill: parent
+                z: 10
+                confirmText: "Run"
+                foreground: root.foreground
+                fontFamily: root.fontFamily
+
+                onCanceled: {
+                    opened = false
+                    runner.declineConfirmation()
+                }
+                onConfirmed: {
+                    opened = false
+                    runner.confirm()
+                }
+            }
 
             Column {
                 id: column
@@ -159,9 +259,43 @@ Panel {
                     onTextChanged: root.filter = text
                     // Arrow keys belong to the list even while typing, so the
                     // user never has to leave the filter to pick a result.
-                    Keys.onDownPressed: root.selectDelta(1)
-                    Keys.onUpPressed: root.selectDelta(-1)
-                    Keys.onEscapePressed: root.close()
+                    // One handler, ahead of the field's own editing, because
+                    // the specific Keys.onEscapePressed / onReturnPressed
+                    // signals fire even when Keys.onPressed has accepted the
+                    // event -- which let Escape dismiss the whole panel out
+                    // from under a modal dialog. Only the keys handled here
+                    // are accepted; everything else still reaches the field.
+                    Keys.priority: Keys.BeforeItem
+                    Keys.onPressed: function (event) {
+                        if (confirmDialog.opened) {
+                            // The dialog is modal and answers first.
+                            if (confirmDialog.handleKey(event))
+                                event.accepted = true
+                            else
+                                event.accepted = true
+                            return
+                        }
+
+                        switch (event.key) {
+                        case Qt.Key_Escape:
+                            root.close()
+                            event.accepted = true
+                            break
+                        case Qt.Key_Return:
+                        case Qt.Key_Enter:
+                            root.runSelected()
+                            event.accepted = true
+                            break
+                        case Qt.Key_Down:
+                            root.selectDelta(1)
+                            event.accepted = true
+                            break
+                        case Qt.Key_Up:
+                            root.selectDelta(-1)
+                            event.accepted = true
+                            break
+                        }
+                    }
                 }
 
                 PanelSeparator { width: parent.width }
@@ -175,6 +309,26 @@ Panel {
                     color: Qt.darker(root.foreground, 1.4)
                     font.family: root.fontFamily
                     font.pixelSize: Style.font.body
+                }
+
+                ParameterEditor {
+                    id: editor
+
+                    width: parent.width
+                    visible: root.editing !== null
+                    task: root.editing
+                    foreground: root.foreground
+                    fontFamily: root.fontFamily
+
+                    onAccepted: root.commitEditor()
+                    onCancelled: root.cancelEditor()
+                }
+
+                TaskStatus {
+                    width: parent.width
+                    runner: runner
+                    foreground: root.foreground
+                    fontFamily: root.fontFamily
                 }
 
                 ListView {

@@ -14,6 +14,14 @@ All notable changes to this project are documented here. Versions follow
   `long`, `short`, `valueName`, and `negate`. A `usage` string that cannot be parsed
   becomes an `error` on that one task, like an unreadable project, rather than
   failing the catalog.
+- Task execution: `omarchy-mise run <project> <task> [args...]` runs one mise task and
+  reports the outcome as JSON — `ok`, `status`, `exitCode`, `durationSeconds`,
+  `timedOut`, `truncated`, and the bounded `stdout`/`stderr`. The command is always an
+  argv array, so a task name, a project path, and a user argument are data and never
+  shell source. Only a task the catalog says exists, in a project the user has trusted,
+  can run; `run.timeout_seconds` (overridable with `--timeout`) ends a task and the
+  whole process group it created; a task whose metadata `risk` is in `run.confirm_risk`
+  is refused until `--confirm` is passed, because the CLI has no way to prompt.
 - `~/.config/omarchy-mise/config.toml` as the plugin's configuration: the directories
   to scan for mise projects, scan depth, task include/exclude globs, the bar label,
   and run limits. Documented in `docs/CONFIGURATION.md`, templated in

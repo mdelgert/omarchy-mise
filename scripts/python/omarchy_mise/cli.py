@@ -13,7 +13,7 @@ from pathlib import Path
 import sys
 from typing import Any
 
-from . import __version__, catalog, manifest, paths, plugin
+from . import __version__, catalog, manifest, paths, plugin, runner
 from . import config as config_module
 
 EXIT_OK = 0
@@ -50,6 +50,22 @@ def cmd_catalog(args: argparse.Namespace) -> int:
         return EXIT_OK
     _emit(payload, args.json)
     return EXIT_OK
+
+
+def cmd_run(args: argparse.Namespace) -> int:
+    """Run one task and print the outcome. A failing task is a result, so the
+    JSON is printed either way; the exit status is what a shell caller reads."""
+    settings = config_module.load(_config_path(args))
+    result = runner.run(
+        args.project,
+        args.task,
+        args.args,
+        settings=settings,
+        confirm=args.confirm,
+        timeout=args.timeout,
+    )
+    _emit(result, args.json)
+    return EXIT_OK if result["ok"] else EXIT_FAILURE
 
 
 def cmd_validate(args: argparse.Namespace) -> int:
@@ -145,6 +161,28 @@ def build_parser() -> argparse.ArgumentParser:
     )
     catalog_parser.set_defaults(handler=cmd_catalog)
 
+    # Task arguments are collected as plain values and passed through as an
+    # argv array. Anything beginning with a dash needs an explicit `--`, so an
+    # argument for the task can never be mistaken for a flag for this CLI.
+    run_parser = subparsers.add_parser("run", help="run one task in one project", parents=[common])
+    run_parser.add_argument("project", help="path to the mise project")
+    run_parser.add_argument("task", help="name of the task to run")
+    run_parser.add_argument(
+        "args",
+        nargs="*",
+        help="arguments passed to the task; prefix with -- if they look like flags",
+    )
+    run_parser.add_argument(
+        "--confirm", action="store_true", help="allow a task whose risk is in run.confirm_risk"
+    )
+    run_parser.add_argument(
+        "--timeout",
+        type=float,
+        metavar="SECONDS",
+        help="override run.timeout_seconds for this run",
+    )
+    run_parser.set_defaults(handler=cmd_run)
+
     subparsers.add_parser("validate", help="validate manifest.json", parents=[common]).set_defaults(
         handler=cmd_validate
     )
@@ -186,6 +224,7 @@ def main(argv: list[str] | None = None) -> int:
         manifest.ManifestError,
         catalog.CatalogError,
         plugin.PluginError,
+        runner.RunError,
     ) as error:
         print(f"omarchy-mise {args.command}: {error}", file=sys.stderr)
         return EXIT_FAILURE

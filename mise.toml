@@ -1,5 +1,18 @@
+# Toolchain and task wiring for developing the Omarchy Mise plugin.
+# Run `mise install` once, then `mise tasks` to see everything available.
+
+[tools]
+ruff = "0.16.6"
+shellcheck = "0.11.0"
+taplo = "0.10.0"
+
+[env]
+# The support library is imported as a package but never installed, so the
+# tasks and the bin/omarchy-mise shim both need it on the path.
+PYTHONPATH = "{{config_root}}/scripts/python"
+PYTHONDONTWRITEBYTECODE = "1"
+
 [task_config]
 includes = ["tasks"]
-excludes = [
-    "tasks/**/*.meta.toml"
-]
+# Metadata sidecars are data for the plugin, not tasks for mise to run.
+excludes = ["tasks/**/*.meta.toml"]

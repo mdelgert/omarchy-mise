@@ -1,53 +1,115 @@
-["omarchy:hello"]
-description = "Simple hello task"
-run = "echo hello task"
-
-["omarchy:param"]
-description = "Task with a required name parameter"
-usage = 'arg "<name>" help="Name to greet"'
-run = 'echo "hello ${usage_name:?}"'
-
-["omarchy:param-default"]
-description = "Task with a name parameter that defaults to world"
-usage = 'arg "[name]" help="Name to greet" default="world"'
-run = 'echo "hello ${usage_name?}"'
-
-["omarchy:bash"]
-description = "Task runs bash meta script"
-file = "scripts/bash/all-metadata.sh"
-
-["omarchy:python"]
-description = "Task runs python meta script"
-run = "python scripts/python/all_metadata.py"
+# Developer tasks for this repository. The browsable fixtures the plugin reads
+# live in tasks/examples.toml.
 
 ["omarchy:check"]
-description = "Run portable repository and plugin checks"
+description = "Portable gate: lint, tests, manifest, and catalog smoke test"
+depends = ["omarchy:lint", "omarchy:test"]
 run = '''
 set -eu
-export PYTHONDONTWRITEBYTECODE=1
+bin/omarchy-mise validate
+bin/omarchy-mise --config config.example.toml config >/dev/null
+bin/omarchy-mise catalog >/dev/null
+'''
+
+["omarchy:test"]
+description = "Run the Python unit tests"
+run = "python3 -m unittest discover --start-directory tests --verbose"
+
+["omarchy:lint"]
+description = "Lint Python, shell, and TOML sources"
+run = '''
+set -eu
 mise tasks validate
-python3 scripts/python/validate_manifest.py
-python3 -m unittest discover -s tests
-python3 scripts/python/all_metadata.py >/dev/null
+ruff check scripts tests
+ruff format --check scripts tests
+shellcheck bin/omarchy-mise
+taplo lint
+taplo fmt --check
+'''
+
+["omarchy:fmt"]
+description = "Format Python and TOML sources in place"
+run = '''
+set -eu
+ruff format scripts tests
+ruff check --fix scripts tests
+taplo fmt
 '''
 
 ["omarchy:check-desktop"]
-description = "Run checks that require an Omarchy desktop installation"
+description = "Run the checks that need an Omarchy desktop installation"
 depends = ["omarchy:check"]
 run = '''
 set -eu
+
 command -v omarchy-plugin-validate >/dev/null 2>&1 || {
-  printf '%s\n' 'omarchy-plugin-validate is required' >&2
+  printf '%s\n' 'omarchy-plugin-validate is required; run this on an Omarchy desktop' >&2
   exit 1
 }
+
 QMLLINT="$(command -v qmllint || true)"
 if [ -z "$QMLLINT" ] && [ -x /usr/lib/qt6/bin/qmllint ]; then
   QMLLINT=/usr/lib/qt6/bin/qmllint
 fi
 if [ -z "$QMLLINT" ]; then
-  printf '%s\n' 'qmllint is required' >&2
+  printf '%s\n' 'qmllint is required (package qt6-declarative)' >&2
   exit 1
 fi
+
 omarchy-plugin-validate .
-"$QMLLINT" -I /usr/share/omarchy/shell Main.qml
+
+# Quickshell exposes the shell config root as the `qs` namespace, so
+# `import qs.Ui` resolves to <import path>/qs/Ui. Pointing qmllint straight at
+# the shell directory makes every import, the BarWidget base type, and every
+# inherited property unresolvable; a `qs` symlink gives it the layout it wants.
+SHELL_DIR="${OMARCHY_PATH:-/usr/share/omarchy}/shell"
+[ -d "$SHELL_DIR" ] || {
+  printf '%s\n' "Omarchy shell imports not found at $SHELL_DIR" >&2
+  exit 1
+}
+IMPORTS="$(mktemp -d)"
+trap 'rm -rf "$IMPORTS"' EXIT
+ln -s "$SHELL_DIR" "$IMPORTS/qs"
+
+# `bar` and `Style.font` are untyped QObject on the host side, so member
+# lookups through them cannot be resolved from here; demote that one category
+# rather than silencing warnings wholesale.
+"$QMLLINT" -I "$IMPORTS" --missing-property info Main.qml
 '''
+
+["omarchy:install"]
+description = "Link this checkout into Omarchy as a development plugin and enable it"
+run = "bin/omarchy-mise install"
+
+["omarchy:uninstall"]
+description = "Disable this plugin and remove its Omarchy install"
+run = "bin/omarchy-mise uninstall"
+
+["omarchy:reload"]
+description = "Make the running shell re-read plugins after an edit"
+run = "omarchy-shell shell rescanPlugins"
+
+["omarchy:restart"]
+description = "Restart the Omarchy shell (needed after QML changes)"
+run = "omarchy-restart-shell"
+
+["omarchy:logs"]
+description = "Follow the Omarchy shell log"
+usage = 'flag "--lines <lines>" help="Lines of history to show" default="200"'
+run = 'journalctl --user -t omarchy-shell -n "${usage_lines:-200}" -f'
+
+["omarchy:doctor"]
+description = "Diagnose the local plugin, config, and shell setup"
+run = "bin/omarchy-mise doctor"
+
+["omarchy:catalog"]
+description = "Print the mise projects and tasks the plugin would show"
+run = "bin/omarchy-mise catalog"
+
+["omarchy:config"]
+description = "Print the resolved plugin configuration"
+run = "bin/omarchy-mise config"
+
+["omarchy:config-init"]
+description = "Write a starter config to ~/.config/omarchy-mise/config.toml"
+run = "bin/omarchy-mise config --init"

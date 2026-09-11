@@ -1,0 +1,9 @@
+version: 2
+updates:
+  # Action SHAs are pinned, so this is the only way they get security updates.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    commit-message:
+      prefix: ci

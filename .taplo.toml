@@ -1,0 +1,11 @@
+# Formatting rules for every TOML file in the repository, so `taplo fmt` and
+# the lint task agree on one layout.
+include = ["**/*.toml"]
+exclude = ["**/.mise/**", "**/node_modules/**"]
+
+[formatting]
+align_entries = false
+array_auto_expand = true
+column_width = 100
+indent_string = "  "
+reorder_keys = false

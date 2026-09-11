@@ -2,23 +2,74 @@ name: Check
 
 on:
   push:
+    branches: [main, dev]
   pull_request:
+  workflow_dispatch:
 
 permissions:
   contents: read
 
+# A new push supersedes an in-flight run on the same ref.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   check:
+    name: Portable checks
     runs-on: ubuntu-24.04
-    timeout-minutes: 5
+    timeout-minutes: 10
     steps:
       - name: Check out repository
-        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+
+      - name: Install mise and the pinned toolchain
+        uses: jdx/mise-action@5228313ee0372e111a38da051671ca30fc5a96db # v3.6.3
+        with:
+          install: true
+          cache: true
+
+      - name: Report the environment
+        run: |
+          mise --version
+          python3 --version
+          mise x -- ruff --version
+
+      # Lint, unit tests, manifest validation, and a catalog smoke test. The
+      # desktop checks (omarchy-plugin-validate, qmllint) need Omarchy and are
+      # run by maintainers with `mise run omarchy:check-desktop`.
+      - name: Run portable checks
+        run: mise run omarchy:check
+
+  python-versions:
+    name: Tests on Python ${{ matrix.python }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        # 3.11 is the floor (tomllib); 3.13 guards against upcoming breakage.
+        python: ["3.11", "3.13"]
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           persist-credentials: false
 
       - name: Install mise
-        uses: jdx/mise-action@5228313ee0372e111a38da051671ca30fc5a96db # v3
+        uses: jdx/mise-action@5228313ee0372e111a38da051671ca30fc5a96db # v3.6.3
+        with:
+          install: false
 
-      - name: Run portable checks
-        run: mise run omarchy:check
+      - name: Set up Python ${{ matrix.python }}
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
+        with:
+          python-version: ${{ matrix.python }}
+
+      - name: Run the unit tests
+        env:
+          PYTHONPATH: scripts/python
+          PYTHONDONTWRITEBYTECODE: "1"
+        run: python -m unittest discover --start-directory tests --verbose

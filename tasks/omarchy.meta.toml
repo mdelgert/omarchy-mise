@@ -1,42 +1,80 @@
-# Exact custom metadata pattern.
-[_.tasks."omarchy:hello"]
-icon = "hand"
-risk = "low"
-enabled = true
-tags = ["omarchy"]
-
-[_.tasks."omarchy:param"]
-icon = "hand"
-risk = "low"
-enabled = true
-tags = ["omarchy", "example", "parameter"]
-
-[_.tasks."omarchy:param-default"]
-icon = "hand"
-risk = "low"
-enabled = true
-tags = ["omarchy", "example", "parameter", "default"]
-
-[_.tasks."omarchy:bash"]
-icon = "gear"
-risk = "low"
-enabled = true
-tags = ["omarchy","bash"]
-
-[_.tasks."omarchy:python"]
-icon = "snake"
-risk = "low"
-enabled = true
-tags = ["omarchy","python"]
+# Display metadata for the developer tasks in omarchy.toml.
+#
+# The plugin scans configured directories for mise projects, so it finds this
+# repository like any other and renders these tasks. They therefore need the
+# same `[_.tasks.*]` annotations as the fixtures in examples.meta.toml — see
+# docs/CONFIGURATION.md for the format.
+#
+# `risk` is compared against `run.confirm_risk` (default ["high"]). The one
+# high-risk task here is the shell restart: it tears down the bar the widget is
+# running in, which is exactly the case that confirmation exists for.
 
 [_.tasks."omarchy:check"]
 icon = "check"
 risk = "low"
-enabled = true
-tags = ["omarchy", "validation", "portable"]
+tags = ["dev", "verify", "portable"]
 
 [_.tasks."omarchy:check-desktop"]
 icon = "desktop"
 risk = "low"
-enabled = true
-tags = ["omarchy", "validation", "desktop"]
+tags = ["dev", "verify", "desktop"]
+
+[_.tasks."omarchy:test"]
+icon = "flask"
+risk = "low"
+tags = ["dev", "verify"]
+
+[_.tasks."omarchy:lint"]
+icon = "ruler"
+risk = "low"
+tags = ["dev", "verify"]
+
+[_.tasks."omarchy:fmt"]
+icon = "broom"
+risk = "low"
+tags = ["dev", "format"]
+
+[_.tasks."omarchy:install"]
+icon = "plug"
+risk = "medium"
+tags = ["dev", "desktop", "install"]
+
+[_.tasks."omarchy:uninstall"]
+icon = "plug"
+risk = "medium"
+tags = ["dev", "desktop", "install"]
+
+[_.tasks."omarchy:reload"]
+icon = "refresh"
+risk = "low"
+tags = ["dev", "desktop"]
+
+[_.tasks."omarchy:restart"]
+icon = "power"
+risk = "high"
+tags = ["dev", "desktop", "disruptive"]
+
+[_.tasks."omarchy:logs"]
+icon = "scroll"
+risk = "low"
+tags = ["dev", "debug"]
+
+[_.tasks."omarchy:doctor"]
+icon = "stethoscope"
+risk = "low"
+tags = ["dev", "debug"]
+
+[_.tasks."omarchy:catalog"]
+icon = "list"
+risk = "low"
+tags = ["dev", "debug", "catalog"]
+
+[_.tasks."omarchy:config"]
+icon = "gear"
+risk = "low"
+tags = ["dev", "config"]
+
+[_.tasks."omarchy:config-init"]
+icon = "gear"
+risk = "low"
+tags = ["dev", "config"]

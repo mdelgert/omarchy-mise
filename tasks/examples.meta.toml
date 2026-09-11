@@ -1,0 +1,27 @@
+# Display metadata for the fixture tasks.
+#
+# `_` is mise's user-defined table: mise carries it without interpreting it, so
+# a project can annotate its own tasks here. This file is a sidecar because
+# task_config.excludes keeps it out of mise's task loading, which lets the
+# metadata sit next to the tasks it describes. The same keys work directly in a
+# project's mise.toml.
+
+[_.tasks."example:hello"]
+icon = "hand"
+risk = "low"
+tags = ["example"]
+
+[_.tasks."example:param"]
+icon = "hand"
+risk = "low"
+tags = ["example", "parameter"]
+
+[_.tasks."example:param-default"]
+icon = "hand"
+risk = "low"
+tags = ["example", "parameter", "default"]
+
+[_.tasks."example:slow"]
+icon = "clock"
+risk = "low"
+tags = ["example", "slow"]

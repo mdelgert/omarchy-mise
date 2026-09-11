@@ -1,57 +1,96 @@
 # Omarchy Mise
 
-An [Omarchy](https://omarchy.org/) shell plugin for browsing and running [mise](https://mise.jdx.dev/) tasks.
+An [Omarchy](https://omarchy.org/) shell plugin for browsing and running
+[mise](https://mise.jdx.dev/) tasks from the bar.
 
-This repository currently provides an installable, theme-aware bar-widget scaffold. The task browser and runner are intentionally not implemented yet; the boundaries for that work are documented in [ARCHITECTURE.md](ARCHITECTURE.md).
+> **Status: scaffold.** The plugin installs, themes itself, and renders a configurable
+> bar label. The task browser is not built yet — but everything behind it is: the
+> configuration format, project discovery, task and metadata collection, and the CLI
+> the widget will call are all implemented and tested. Run `mise run omarchy:catalog`
+> to see the data the browser will render. [docs/ROADMAP.md](docs/ROADMAP.md) lists
+> what remains.
 
 ## Install
 
-Requires an Omarchy release with shell-plugin support:
+Requires an Omarchy release with shell-plugin support.
 
 ```sh
 omarchy plugin add https://github.com/mdelgert/omarchy-mise.git --enable
 ```
 
-The plugin does not install a global keybinding. Future interactive surfaces will be exposed as shell actions so users can bind them explicitly without overriding Omarchy or personal mappings.
-
-## Development
-
-```sh
-mise install
-mise tasks
-mise run omarchy:check
-```
-
-Run the task argument fixtures:
+Then create the configuration and point it at the directories holding your mise
+projects:
 
 ```sh
-mise run omarchy:param Omarchy
-mise run omarchy:param-default
-mise run omarchy:param-default Omarchy
+~/.config/omarchy/plugins/io.github.mdelgert.omarchy-mise/bin/omarchy-mise config --init
 ```
 
-On an Omarchy development machine, also run the authoritative manifest validator and QML linter:
+That writes `~/.config/omarchy-mise/config.toml`. From a development checkout the
+same command is `bin/omarchy-mise config --init`, or `mise run omarchy:config-init`.
+
+See [docs/CONFIGURATION.md](docs/CONFIGURATION.md) for every setting. The plugin
+installs no global keybinding; interactive surfaces will be exposed as shell actions
+you can bind yourself.
+
+Remove it with `omarchy plugin remove io.github.mdelgert.omarchy-mise`.
+
+## Develop
 
 ```sh
-mise run omarchy:check-desktop
+git clone https://github.com/mdelgert/omarchy-mise.git
+cd omarchy-mise
+mise install                    # ruff, shellcheck, taplo
+mise run omarchy:check          # the gate — lint, tests, manifest, catalog
+mise run omarchy:install        # symlink this checkout into Omarchy and enable it
 ```
 
-Install the working tree for manual testing without modifying the system checkout:
+`omarchy:install` links rather than copies, so edits are live. Restart the shell to
+pick up QML changes, and remove the link when you are done:
 
 ```sh
-omarchy plugin add "file://$(pwd)" --enable
+mise run omarchy:restart
+mise run omarchy:uninstall
 ```
 
-Use `omarchy plugin remove io.github.mdelgert.omarchy-mise --yes` when testing is complete. Review [docs/AUTHORING.md](docs/AUTHORING.md) before adding task fixtures and [AGENTS.md](AGENTS.md) before changing plugin code.
+[docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) covers the full debug and test process.
 
-## Project layout
+## Tasks
 
-- `manifest.json` — public plugin contract
-- `Main.qml` — current bar-widget entry point
-- `tasks/` — mise development and fixture tasks
-- `scripts/` — bounded development utilities
-- `docs/` — contributor documentation
-- `skills/` — project-local agent workflows
+Developer tasks use the `omarchy:` prefix; `example:` tasks are fixtures the plugin
+discovers. `mise tasks` lists them all.
+
+| Task | Purpose |
+| --- | --- |
+| `omarchy:check` | Portable gate: lint, tests, manifest, catalog smoke test |
+| `omarchy:check-desktop` | Adds `omarchy-plugin-validate` and `qmllint` |
+| `omarchy:test` | Unit tests |
+| `omarchy:lint` / `omarchy:fmt` | Check / apply formatting for Python, shell, TOML |
+| `omarchy:install` / `omarchy:uninstall` | Link or unlink this checkout as a plugin |
+| `omarchy:reload` / `omarchy:restart` | Rescan plugins / restart the shell |
+| `omarchy:logs` | Follow the Omarchy shell log |
+| `omarchy:doctor` | Diagnose tools, config, catalog, install, and shell |
+| `omarchy:catalog` | Print the projects and tasks the plugin would show |
+| `omarchy:config` / `omarchy:config-init` | Show / create the configuration |
+
+## Layout
+
+```
+manifest.json          public plugin contract
+Main.qml               bar-widget entry point
+config.example.toml    documented configuration template
+bin/omarchy-mise       one entry point for tasks and the widget
+scripts/python/        the support library (stdlib only)
+tasks/                 developer tasks and example fixtures
+tests/                 unit tests
+docs/                  contributor documentation
+.claude/skills/        project skills for coding agents
+```
+
+## Contributing
+
+Read [AGENTS.md](AGENTS.md) for the boundaries that apply to every change and
+[CONTRIBUTING.md](CONTRIBUTING.md) for the workflow. `mise run omarchy:check` must
+pass before a change is complete.
 
 ## License
 

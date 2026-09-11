@@ -1,0 +1,21 @@
+# Ruff configuration for the plugin's support library.
+line-length = 100
+target-version = "py311"
+
+[lint]
+select = [
+  "E",   # pycodestyle
+  "F",   # pyflakes
+  "I",   # import sorting
+  "UP",  # pyupgrade
+  "B",   # bugbear
+  "SIM", # simplification
+  "RUF", # ruff-specific
+]
+
+[lint.isort]
+force-sort-within-sections = true
+
+[lint.per-file-ignores]
+# Tests reach into module internals on purpose.
+"tests/*" = ["SLF001"]

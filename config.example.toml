@@ -1,0 +1,44 @@
+# Omarchy Mise configuration.
+#
+# Copy to ~/.config/omarchy-mise/config.toml, or run:
+#
+#     mise run omarchy:config-init
+#
+# Every setting is optional; the values shown are the defaults. The file is
+# never written to by the plugin, and nothing is stored inside the installed
+# plugin checkout.
+
+# Bump only when the plugin asks you to. A newer value than the plugin
+# understands loads with a warning rather than failing.
+schema_version = 1
+
+[ui]
+# Text shown in the bar. Trimmed to 80 characters and elided to fit.
+label = "Mise"
+# Hard ceiling on how many tasks are loaded, so a large tree cannot stall the bar.
+max_tasks = 200
+
+[scan]
+# Directories searched for mise projects. `~` and $VARS are expanded, and
+# entries that do not exist are skipped without an error.
+directories = ["~/Source", "~/Projects", "~/src", "~/code"]
+# How many levels below each directory to descend. A directory that is itself a
+# mise project is never descended into.
+max_depth = 2
+# Follow symlinked directories while scanning. Off by default to avoid loops.
+follow_symlinks = false
+
+[tasks]
+# Glob patterns matched against the task name. An empty `include` means every
+# task; `exclude` is applied afterwards.
+include = []
+exclude = ["*:secret*", "release:*"]
+# Include tasks mise marks as hidden.
+hidden = false
+
+[run]
+# Give up on a task that runs longer than this.
+timeout_seconds = 300
+# Task metadata `risk` values that require a confirmation before running.
+# See "Task metadata" in docs/CONFIGURATION.md.
+confirm_risk = ["high"]

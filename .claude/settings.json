@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "permissions": {
+    "allow": [
+      "Bash(mise run omarchy:*)",
+      "Bash(mise tasks*)",
+      "Bash(mise install)",
+      "Bash(mise x -- *)",
+      "Bash(bin/omarchy-mise *)",
+      "Bash(python3 -m unittest*)",
+      "Bash(omarchy plugin list*)",
+      "Bash(omarchy-plugin-list*)",
+      "Bash(omarchy-shell shell ping)",
+      "Bash(omarchy-shell shell listPlugins)",
+      "Bash(omarchy-shell shell rescanPlugins)",
+      "Bash(omarchy-plugin-validate *)",
+      "Bash(journalctl --user -t omarchy-shell*)",
+      "Bash(git status*)",
+      "Bash(git diff*)",
+      "Bash(git log*)"
+    ],
+    "deny": [
+      "Edit(//usr/share/omarchy/**)",
+      "Write(//usr/share/omarchy/**)",
+      "Edit(//home/*/.config/hypr/**)",
+      "Edit(//home/*/.config/omarchy/**)"
+    ],
+    "ask": [
+      "Bash(omarchy plugin remove*)",
+      "Bash(omarchy-restart-shell)",
+      "Bash(mise run omarchy:install)",
+      "Bash(mise run omarchy:uninstall)"
+    ]
+  }
+}

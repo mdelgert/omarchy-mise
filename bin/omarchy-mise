@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+# Single entry point for the plugin's support commands. Both the mise tasks and
+# the QML widget call this, so neither needs to know where the Python lives.
+set -euo pipefail
+
+root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
+export PYTHONPATH="$root/scripts/python${PYTHONPATH:+:$PYTHONPATH}"
+export PYTHONDONTWRITEBYTECODE=1
+
+exec python3 -m omarchy_mise "$@"

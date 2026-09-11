@@ -1,0 +1,21 @@
+# Fixture tasks. These exist to be discovered and rendered by the plugin, and
+# to exercise mise's argument handling; they are deliberately trivial and safe
+# to run repeatedly. Their display metadata lives in examples.meta.toml.
+
+["example:hello"]
+description = "Print a greeting"
+run = "echo hello"
+
+["example:param"]
+description = "Task with a required name parameter"
+usage = 'arg "<name>" help="Name to greet"'
+run = 'echo "hello ${usage_name:?}"'
+
+["example:param-default"]
+description = "Task with a name parameter that defaults to world"
+usage = 'arg "[name]" help="Name to greet" default="world"'
+run = 'echo "hello ${usage_name?}"'
+
+["example:slow"]
+description = "Sleep briefly, to exercise progress and cancellation"
+run = "sleep 2 && echo done"

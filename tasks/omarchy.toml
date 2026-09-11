@@ -71,10 +71,26 @@ IMPORTS="$(mktemp -d)"
 trap 'rm -rf "$IMPORTS"' EXIT
 ln -s "$SHELL_DIR" "$IMPORTS/qs"
 
-# `bar` and `Style.font` are untyped QObject on the host side, so member
-# lookups through them cannot be resolved from here; demote that one category
-# rather than silencing warnings wholesale.
-"$QMLLINT" -I "$IMPORTS" --missing-property info Main.qml
+# Two categories are demoted, both because of gaps on the host side rather
+# than anything in this plugin, and both narrowly so a real warning of any
+# other kind still stands out:
+#   missing-property        - `bar` and `Style.font` are untyped QObject, so
+#                             member lookups through them cannot resolve here.
+#   signal-handler-parameters - Quickshell does not export QProcess::ExitStatus
+#                             to QML, and Process.exited(exitCode, exitStatus)
+#                             is the only way to read an exit code.
+# Lint every QML file, not just the entry point, so a service or component
+# with a real error cannot slip through because nothing imports it yet.
+QML_FILES="$(find . -name '*.qml' -not -path './.git/*' | sort)"
+[ -n "$QML_FILES" ] || {
+  printf '%s\n' 'no QML files found' >&2
+  exit 1
+}
+# shellcheck disable=SC2086
+"$QMLLINT" -I "$IMPORTS" \
+  --missing-property info \
+  --signal-handler-parameters info \
+  $QML_FILES
 '''
 
 ["omarchy:install"]

@@ -22,6 +22,16 @@ All notable changes to this project are documented here. Versions follow
   can run; `run.timeout_seconds` (overridable with `--timeout`) ends a task and the
   whole process group it created; a task whose metadata `risk` is in `run.confirm_risk`
   is refused until `--confirm` is passed, because the CLI has no way to prompt.
+- `services/TaskCatalog.qml`, the single owner of the task catalog, declared as the
+  plugin's `service` entry point so the host loads one for the whole shell rather
+  than one per monitor. It distinguishes idle, loading, ready, empty, error, and
+  cancelled; a newer refresh cancels the one in flight; a cancelled refresh keeps the
+  previous catalog rather than blanking it. Bar widgets subscribe through
+  `bar.shell.serviceFor()` and never start a catalog process of their own.
+- The bar label now comes from `ui.label` in the configuration file, read through
+  `services/Config.qml`. Precedence is the host's inline `shell.json` setting, then
+  the config file, then the built-in default; an unreadable or invalid config falls
+  back to the default and logs the reason from the CLI.
 - `~/.config/omarchy-mise/config.toml` as the plugin's configuration: the directories
   to scan for mise projects, scan depth, task include/exclude globs, the bar label,
   and run limits. Documented in `docs/CONFIGURATION.md`, templated in
@@ -61,6 +71,10 @@ All notable changes to this project are documented here. Versions follow
   and the fixtures the plugin browses moved to `tasks/examples.toml` under the
   `example:` prefix (`omarchy:hello` is now `example:hello`, and so on).
 - `omarchy:check` now runs lint and tests as well as manifest validation.
+- `omarchy:check-desktop` lints every QML file rather than only the entry point, so a
+  service or component nothing imports yet cannot hide an error. It also demotes
+  `signal-handler-parameters`: Quickshell does not export `QProcess::ExitStatus` to
+  QML, and `Process.exited` is the only way to read an exit code.
 - Roadmap R2 and R5 no longer put testable logic in `Model.js`; this repository has
   no JavaScript test runner, so `usage`-string parsing moves to Python and QML trusts
   the CLI's payload. R4 and R5 are split into their Python and QML halves so the two

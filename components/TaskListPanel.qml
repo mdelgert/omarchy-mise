@@ -108,7 +108,10 @@ Panel {
         id: panel
 
         anchorItem: root.anchorItem
-        owner: root
+        // The bar tracks the widget mounted in its slot, not this nested
+        // panel, and resolves popout identity by slot.activeItem === owner.
+        // Naming the panel here breaks the open-panel indicator and Tab.
+        owner: root.hostWidget || root
         bar: root.bar
         open: root.opened
         // The filter field, not the key catcher: typing to narrow the list is

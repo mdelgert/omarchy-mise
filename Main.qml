@@ -51,15 +51,28 @@ BarWidget {
         if ("catalog" in target) target.catalog = root.catalog
     }
 
+    // Shape contract for shell.summon/hide/toggle routing: Bar.findPanelWidget
+    // skips any bar widget that does not expose open(), close() and `opened`,
+    // and that router is what picks the focused monitor's copy.
+    readonly property bool opened: panelLoader.item ? panelLoader.item.opened === true : false
+
     function panelAction(method) {
         const target = panelLoader.item
         if (target && typeof target[method] === "function")
             target[method]()
     }
 
+    function open() { panelAction("open") }
+    function close() { panelAction("close") }
     function togglePanel() { panelAction("toggle") }
-    function openPanel() { panelAction("open") }
-    function closePanel() { panelAction("close") }
+
+    // Popout identity: Bar.requestPopout prefers closeForPopoutSwitch over
+    // close, and KeyboardPanel reads popoutSwitchClosing back off its owner.
+    readonly property bool popoutSwitchClosing: panelLoader.item
+        ? panelLoader.item.popoutSwitchClosing === true
+        : false
+
+    function closeForPopoutSwitch() { panelAction("closeForPopoutSwitch") }
 
     implicitWidth: vertical ? barSize : button.implicitWidth
     implicitHeight: vertical ? button.implicitHeight : barSize
@@ -79,14 +92,29 @@ BarWidget {
         id: config
     }
 
-    // One handler for the whole plugin, relayed to every monitor's panel.
-    // R6 turns this into a documented, user-chosen binding.
+    // This target routes to whichever per-monitor instance registered first,
+    // so it acts on that one instance. Opening every copy is not an option:
+    // the bar keeps a single shell-wide activePopout, so three simultaneous
+    // opens cancel each other and can leave a panel wedged open-but-unmapped.
+    // `broadcast` is for refresh-style methods only. A summon that should land
+    // on the focused monitor goes through the host instead:
+    //   omarchy-shell shell toggle io.github.mdelgert.omarchy-mise
+    // which resolves the right copy via Bar.findPanelWidget. R6 documents that
+    // as the binding.
     IpcHandler {
         target: root.moduleName
 
-        function toggle(): void { root.broadcast("togglePanel") }
-        function open(): void { root.broadcast("openPanel") }
-        function close(): void { root.broadcast("closePanel") }
+        function toggle(): void { root.togglePanel() }
+        function open(): void { root.open() }
+        function close(): void { root.close() }
+        function refresh(): void { root.broadcast("refreshCatalog") }
+    }
+
+    // Unlike open/close, a refresh must reach every screen or the others go
+    // stale -- the case broadcast exists for.
+    function refreshCatalog() {
+        if (catalog && typeof catalog.refresh === "function")
+            catalog.refresh()
     }
 
     Loader {

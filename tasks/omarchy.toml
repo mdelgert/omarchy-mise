@@ -9,4 +9,3 @@ file = "scripts/bash/all-metadata.sh"
 ["omarchy:python"]
 description = "Task runs python meta script"
 run = "python scripts/python/all_metadata.py"
-    

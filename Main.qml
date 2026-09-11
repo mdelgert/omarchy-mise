@@ -29,12 +29,20 @@ BarWidget {
         ? bar.shell.serviceFor(moduleName)
         : null
 
-    onCatalogChanged: {
-        injectPanel()
-        if (!catalog && bar && bar.shell)
-            // This binding evaluates once before the host has injected `bar`,
-            // so only a real absence is worth reporting.
-            console.warn("omarchy-mise", "widget: catalog service is not available")
+    onCatalogChanged: injectPanel()
+
+    // The service resolves a moment after the widget is built, so `catalog` is
+    // legitimately null at first and warning on every change put three false
+    // alarms in the log on every startup. Report only a genuine absence.
+    Timer {
+        interval: 5000
+        running: true
+        repeat: false
+        onTriggered: {
+            if (!root.catalog)
+                console.warn("omarchy-mise",
+                             "widget: catalog service unavailable; is the plugin enabled?")
+        }
     }
     onBarChanged: injectPanel()
     onSettingsChanged: injectPanel()

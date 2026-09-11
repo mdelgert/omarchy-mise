@@ -86,7 +86,9 @@ only running the task does that.
 ## Rules
 
 - Never build a shell command by interpolating a task name or user input.
-- Never add a global keybinding.
+- Never add a global keybinding from a task, and never make one a side effect of
+  another task. `omarchy:bind` is the one exception and already exists; it is
+  explicit, conflict-checked, and reversible.
 - Never change installed Omarchy files while developing fixtures.
 - Change a task file and its `*.meta.toml` sidecar together; they drift easily. A
   task with no metadata renders blank in the plugin.

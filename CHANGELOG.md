@@ -28,6 +28,16 @@ All notable changes to this project are documented here. Versions follow
   can write anything (Omarchy deliberately runs no plugin code at install time).
   Neither path overwrites an existing file, so an edited config survives a reinstall.
 
+- `omarchy-mise bind` / `unbind` / `bind --status`, and the matching `omarchy:bind`,
+  `omarchy:unbind`, and `omarchy:bind-status` tasks: the optional keybinding for the
+  task browser, added and removed on request. The plugin still installs no binding
+  automatically. `bind` defaults to `SUPER + M`, refuses a combination another binding
+  already holds and names the owner (`--force` overrides it and writes the `hl.unbind`
+  Omarchy requires first), backs `~/.config/hypr/bindings.lua` up, and writes one
+  delimited block that `unbind` removes byte for byte. The combination is validated to
+  modifiers plus a single key before it reaches a Lua literal. `doctor` reports whether
+  the binding is installed. `OMARCHY_MISE_BINDINGS` overrides the file, for tests.
+
 ### Changed
 
 - The bar label defaults to an icon instead of the word "Mise": U+F487, a rocket and

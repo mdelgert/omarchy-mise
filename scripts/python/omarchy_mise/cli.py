@@ -13,7 +13,7 @@ from pathlib import Path
 import sys
 from typing import Any
 
-from . import __version__, catalog, manifest, paths, plugin, runner
+from . import __version__, binding, catalog, manifest, paths, plugin, runner
 from . import config as config_module
 
 EXIT_OK = 0
@@ -98,6 +98,41 @@ def cmd_manifest(args: argparse.Namespace) -> int:
 def cmd_install(args: argparse.Namespace) -> int:
     print(plugin.install(section=args.section, enable=not args.no_enable))
     return EXIT_OK
+
+
+def cmd_bind(args: argparse.Namespace) -> int:
+    """Add, inspect, or replace the optional keybinding for the task browser."""
+    try:
+        result = binding.status() if args.status else binding.add(args.key, force=args.force)
+    except binding.BindingError as error:
+        print(f"bind: {error}", file=sys.stderr)
+        return EXIT_FAILURE
+
+    if args.json:
+        _emit(result, compact=True)
+    elif args.status:
+        print(f"bound: {result['key']}" if result["bound"] else "not bound")
+    else:
+        print(result["detail"])
+        if result.get("changed"):
+            print(f"backup: {result['backup']}")
+    return EXIT_OK if result["ok"] else EXIT_FAILURE
+
+
+def cmd_unbind(args: argparse.Namespace) -> int:
+    try:
+        result = binding.remove()
+    except binding.BindingError as error:
+        print(f"unbind: {error}", file=sys.stderr)
+        return EXIT_FAILURE
+
+    if args.json:
+        _emit(result, compact=True)
+    else:
+        print(result["detail"])
+        if result.get("changed"):
+            print(f"backup: {result['backup']}")
+    return EXIT_OK if result["ok"] else EXIT_FAILURE
 
 
 def cmd_uninstall(args: argparse.Namespace) -> int:
@@ -221,6 +256,33 @@ def build_parser() -> argparse.ArgumentParser:
     subparsers.add_parser(
         "uninstall", help="disable and unlink this plugin", parents=[common]
     ).set_defaults(handler=cmd_uninstall)
+
+    # The plugin never installs a binding on its own; this is how a user asks
+    # for one. It refuses a combination something else already owns, so asking
+    # cannot silently shadow an existing mapping.
+    bind_parser = subparsers.add_parser(
+        "bind",
+        help="bind a key to the task browser in ~/.config/hypr/bindings.lua",
+        parents=[common],
+    )
+    bind_parser.add_argument(
+        "key",
+        nargs="?",
+        help=f"key combination, e.g. 'SUPER + CTRL + M' (default: {binding.DEFAULT_KEY})",
+    )
+    bind_parser.add_argument(
+        "--force",
+        action="store_true",
+        help="override a combination that is already bound (writes hl.unbind first)",
+    )
+    bind_parser.add_argument(
+        "--status", action="store_true", help="report whether the binding is installed"
+    )
+    bind_parser.set_defaults(handler=cmd_bind)
+
+    subparsers.add_parser(
+        "unbind", help="remove the task browser keybinding", parents=[common]
+    ).set_defaults(handler=cmd_unbind)
 
     subparsers.add_parser(
         "doctor", help="diagnose the local plugin setup", parents=[common]

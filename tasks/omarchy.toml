@@ -137,3 +137,23 @@ run = "omarchy plugin add https://github.com/mdelgert/omarchy-mise.git --enable"
 ["omarchy:plugin-uninstall"]
 description = "Uninstall the plugin from the GitHub repository"
 run = "omarchy plugin remove io.github.mdelgert.omarchy-mise"
+
+["omarchy:bind"]
+description = "Bind a key to the task browser in ~/.config/hypr/bindings.lua"
+# The plugin installs no binding of its own, so this is how a user asks for
+# one. Refuses a combination something else already owns unless --force is
+# passed, and writes a single delimited block that omarchy:unbind removes
+# exactly. The file is backed up first.
+usage = '''
+arg "[key]" help="Key combination, e.g. SUPER + M" default="SUPER + M"
+flag "--force" help="Override a combination that is already bound"
+'''
+run = 'bin/omarchy-mise bind ${usage_force:+--force} "${usage_key?}"'
+
+["omarchy:unbind"]
+description = "Remove the task browser keybinding from ~/.config/hypr/bindings.lua"
+run = "bin/omarchy-mise unbind"
+
+["omarchy:bind-status"]
+description = "Report whether the task browser keybinding is installed"
+run = "bin/omarchy-mise bind --status"

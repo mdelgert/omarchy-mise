@@ -68,10 +68,19 @@ destruction, and distinct empty, error, and cancelled states. Task execution mus
 require an explicit user action and visibly report the selected project and task.
 Arguments stay an argv array; task names are never interpolated into a shell command.
 
-The plugin will not own global keybindings. A future panel or overlay will expose host
-summon and toggle actions and document optional user-selected bindings, so existing
-Omarchy and user mappings keep working. [docs/ROADMAP.md](docs/ROADMAP.md) sequences
-this work.
+The plugin does not own a global keybinding. The panel is reached through the host's
+`shell toggle`, `summon`, and `hide` actions, so existing Omarchy and user mappings
+keep working and the host decides which monitor's copy answers.
+
+A binding is therefore opt-in and never automatic: no install, enable, or load path
+creates one. `omarchy-mise bind` exists so that opting in is one command rather than a
+hand-edit, and it is built so that opting in cannot break something else — it asks
+`omarchy menu keybindings` what already holds the combination and refuses rather than
+shadowing it, writes a single delimited block in `~/.config/hypr/bindings.lua` after
+backing the file up, and removes exactly that block on `unbind`. A conflict check that
+cannot run (off an Omarchy desktop) is reported, not assumed clear. The key
+combination is the only untrusted value written into that file, so it is validated
+down to modifiers plus one key before it reaches a Lua literal.
 
 ## State and lifecycle
 

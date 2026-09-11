@@ -13,7 +13,7 @@ import shutil
 import subprocess
 from typing import Any
 
-from . import catalog, manifest, paths
+from . import binding, catalog, manifest, paths
 from . import config as config_module
 
 COMMAND_TIMEOUT_SECONDS = 30
@@ -241,6 +241,20 @@ def doctor(root: Path | None = None) -> dict[str, Any]:
     if shutil.which("omarchy-shell"):
         alive = _run(["omarchy-shell", "shell", "ping"], check=False).returncode == 0
         record("omarchy-shell responding", alive, "ping ok" if alive else "shell not running")
+
+    # The keybinding is optional by design, so its absence is informational.
+    try:
+        bound = binding.status()
+    except OSError as error:
+        record("keybinding", None, str(error))
+    else:
+        record(
+            "keybinding",
+            None,
+            f"bound to {bound['key']}"
+            if bound["bound"]
+            else f"not bound; `omarchy-mise bind` adds {binding.DEFAULT_KEY}",
+        )
 
     failed = [item for item in checks if item["ok"] is False]
     return {"ok": not failed, "checks": checks, "failures": len(failed)}

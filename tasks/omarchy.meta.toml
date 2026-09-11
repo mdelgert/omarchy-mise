@@ -88,3 +88,18 @@ tags = ["dev", "desktop", "install"]
 icon = "plug"
 risk = "medium"
 tags = ["dev", "desktop", "install"]
+
+[_.tasks."omarchy:bind"]
+icon = "keyboard"
+risk = "high"
+tags = ["dev", "desktop", "keybinding"]
+
+[_.tasks."omarchy:unbind"]
+icon = "keyboard"
+risk = "high"
+tags = ["dev", "desktop", "keybinding"]
+
+[_.tasks."omarchy:bind-status"]
+icon = "keyboard"
+risk = "low"
+tags = ["dev", "desktop", "keybinding"]

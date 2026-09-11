@@ -35,11 +35,31 @@ See [docs/CONFIGURATION.md](docs/CONFIGURATION.md) for every setting.
 
 ### Opening it with a key
 
-The plugin installs no keybinding of its own — it would collide with an Omarchy
-default or with one of yours. Bind it yourself in `~/.config/hypr/bindings.lua`:
+The plugin installs no keybinding of its own — one you did not ask for is one that
+silently shadows something you already use. Asking for it is one command:
+
+```sh
+omarchy-mise bind                      # SUPER + M, or pass your own combination
+omarchy-mise bind "SUPER + CTRL + M"   # matches Omarchy's own panel bindings
+omarchy-mise bind --status             # is it installed, and on which key
+omarchy-mise unbind                    # remove it again
+```
+
+From a development checkout: `mise run omarchy:bind`, `omarchy:bind-status`,
+`omarchy:unbind`.
+
+It refuses a combination something else already holds and names the owner, so it
+cannot shadow an Omarchy default or one of yours — `--force` accepts the collision
+and writes the `hl.unbind` Omarchy requires ahead of the bind. The change is a single
+delimited block in `~/.config/hypr/bindings.lua`, the file is backed up first, and
+`unbind` removes exactly that block and nothing else.
+
+To do it by hand instead, add this to `~/.config/hypr/bindings.lua` — but check
+`omarchy menu keybindings --print` first, because many obvious combinations are
+taken (`SUPER + SHIFT + M`, for one, is Omarchy's "Music"):
 
 ```lua
-o.bind("SUPER + SHIFT + M", "Mise tasks", "omarchy-shell shell toggle io.github.mdelgert.omarchy-mise")
+o.bind("SUPER + M", "Mise tasks", "omarchy-shell shell toggle io.github.mdelgert.omarchy-mise")
 ```
 
 Go through `shell toggle`, not the plugin's own IPC target: the host resolves which
@@ -91,6 +111,8 @@ discovers. `mise tasks` lists them all.
 | `omarchy:doctor` | Diagnose tools, config, catalog, install, and shell |
 | `omarchy:catalog` | Print the projects and tasks the plugin would show |
 | `omarchy:config` / `omarchy:config-init` | Show / create the configuration |
+| `omarchy:bind` / `omarchy:unbind` | Add / remove the optional keybinding |
+| `omarchy:bind-status` | Report whether the keybinding is installed |
 
 ## Layout
 

@@ -7,6 +7,13 @@ All notable changes to this project are documented here. Versions follow
 
 ### Added
 
+- Task argument parsing: `scripts/python/omarchy_mise/usage.py` turns a task's `usage`
+  string into a structured list, and every task in `omarchy-mise catalog` now carries
+  it under a new `arguments` key alongside the raw `usage` string. Each entry reports
+  `name`, `kind`, `required`, `default`, `help`, `variadic`, `choices`, and a flag's
+  `long`, `short`, `valueName`, and `negate`. A `usage` string that cannot be parsed
+  becomes an `error` on that one task, like an unreadable project, rather than
+  failing the catalog.
 - `services/TaskCatalog.qml`, the single owner of the task catalog, declared as the
   plugin's `service` entry point so the host loads one for the whole shell rather
   than one per monitor. It distinguishes idle, loading, ready, empty, error, and

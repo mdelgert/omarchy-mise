@@ -4,6 +4,8 @@ Scafold default Omarchy plugin completely keyboard driven with no conflicting ke
 https://plugins.omarchy.org/
 https://github.com/omacom/omarchy-plugin-marketplace
 
+This plugin will display mise tasks and allow running them.
+
 Icons
 https://www.nerdfonts.com/cheat-sheet
 

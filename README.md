@@ -3,12 +3,12 @@
 An [Omarchy](https://omarchy.org/) shell plugin for browsing and running
 [mise](https://mise.jdx.dev/) tasks from the bar.
 
-> **Status: scaffold.** The plugin installs, themes itself, and renders a configurable
-> bar label. The task browser is not built yet — but everything behind it is: the
-> configuration format, project discovery, task and metadata collection, and the CLI
-> the widget will call are all implemented and tested. Run `mise run omarchy:catalog`
-> to see the data the browser will render. [docs/ROADMAP.md](docs/ROADMAP.md) lists
-> what remains.
+> **Status: browsing works, running does not — yet.** Clicking the bar widget opens a
+> panel listing every task in your configured directories, grouped by project and
+> filtered as you type. It is read-only for now: the runner underneath it is built and
+> tested (`omarchy-mise run`), but it is not wired to the panel. What remains is the
+> QML to run a task and prompt for its arguments — see
+> [docs/ROADMAP.md](docs/ROADMAP.md).
 
 ## Install
 

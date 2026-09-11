@@ -71,8 +71,14 @@ work.
 | `timeout_seconds` | integer ≥ 1 | `300` | Give up on a task that runs longer. |
 | `confirm_risk` | list of strings | `["high"]` | Task metadata `risk` values that require confirmation before running. |
 
-`[run]` is read by the task runner, which is [roadmap](ROADMAP.md) work; the settings
-are validated today so configs written now stay valid.
+Both are enforced by `omarchy-mise run`. A task whose metadata `risk` appears in
+`confirm_risk` is refused unless the caller passes `--confirm`, and a task that
+outruns `timeout_seconds` is terminated along with anything it spawned. The bar's
+own `omarchy:restart` is marked `high`, so it makes a safe thing to try this on:
+
+```sh
+bin/omarchy-mise run . omarchy:restart      # refused, and nothing is spawned
+```
 
 ## Trusted projects
 

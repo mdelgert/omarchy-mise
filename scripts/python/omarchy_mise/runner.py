@@ -270,7 +270,7 @@ def run(
     # One resolution of the mise binary for the whole package, and an argv
     # array: the task name and every argument are separate elements, so
     # nothing a caller supplies can become part of a command.
-    argv = [catalog._mise_binary(), "--cd", str(directory), "run", name, *arguments]
+    argv = [catalog.mise_binary(), "--cd", str(directory), "run", name, *arguments]
     return _execute(
         argv,
         task=name,

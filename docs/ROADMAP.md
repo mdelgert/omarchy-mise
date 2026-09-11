@@ -20,9 +20,15 @@ never touch the same file:
 
 | Lane | Owns | Items | Needs a desktop |
 | --- | --- | --- | --- |
-| **A — QML** | `Main.qml`, `services/`, `components/` | R1 → R2 → R3 → 4b → 5b → R6 | Yes |
-| **B — argument parser** | `scripts/python/omarchy_mise/usage.py` | 5a | No |
-| **C — task runner** | `scripts/python/omarchy_mise/runner.py` | 4a | No |
+| **A — QML** | `Main.qml`, `services/`, `components/` | ~~R1 → R2 → R3~~ → 4b → 5b → R6 | Yes |
+| **B — argument parser** | `scripts/python/omarchy_mise/usage.py` | ~~5a~~ | No |
+| **C — task runner** | `scripts/python/omarchy_mise/runner.py` | ~~4a~~ | No |
+
+**Where things stand.** R1, R2, R3, 4a and 5a are merged. What remains is the QML
+half of running a task (4b), the argument editor (5b), the documented binding (R6),
+and the release (R7) — all of it lane A, all of it sequential, and all of it needing
+a desktop. The data layer beneath it is complete: `omarchy-mise catalog` reports
+every task with structured `arguments`, and `omarchy-mise run` executes one safely.
 
 Lane A is strictly sequential: each item establishes something the next one uses, and
 R1 exists to set the process-ownership pattern the rest copy. Lanes B and C are pure
@@ -65,7 +71,7 @@ test for every behaviour, a `CHANGELOG.md` entry, then merge to `dev`.
 
 ---
 
-## R1 — Read the configured label
+## R1 — Read the configured label ✅ done
 
 **Scope.** Make the widget show `ui.label` from `config.toml` instead of only the
 host's inline `settings` entry. Precedence: host setting, then config file, then
@@ -84,7 +90,7 @@ the value.
 
 ---
 
-## R2 — Task catalog service
+## R2 — Task catalog service ✅ done
 
 **Scope.** One `services/TaskCatalog.qml` that owns catalog refreshes: runs
 `bin/omarchy-mise catalog --json`, parses it, and exposes tasks, a loading state, and
@@ -111,7 +117,7 @@ carries `trusted: false` through to the view.
 
 ---
 
-## R3 — Task list surface
+## R3 — Task list surface ✅ done
 
 **Scope.** A panel or overlay listing projects and their tasks, with filtering by name.
 Read-only: no execution yet.
@@ -128,7 +134,7 @@ on a vertical bar; focus returns cleanly to the compositor on close.
 
 ---
 
-## R4 — Run a task
+## R4 — Run a task — 4a ✅ done, 4b remaining
 
 **Scope.** Run the selected task from the list and report the outcome.
 
@@ -150,7 +156,7 @@ process survives the shell restarting.
 
 ---
 
-## R5 — Task arguments
+## R5 — Task arguments — 5a ✅ done, 5b remaining
 
 **Scope.** Prompt for the arguments a task declares in its `usage` string.
 
@@ -179,6 +185,12 @@ accepts an override.
 **Scope.** Expose summon/toggle as Omarchy shell actions.
 
 **Files.** `Main.qml`, `README.md`.
+
+**Already done by R3.** The widget implements the host's summon shape contract
+(`open()`, `close()`, `opened`, plus the `closeForPopoutSwitch` /
+`popoutSwitchClosing` forwarders), so `omarchy-shell shell toggle
+io.github.mdelgert.omarchy-mise` already opens the panel on the focused monitor.
+What is left here is documenting it as an optional user-chosen binding.
 
 **Notes.** The plugin must not own a global keybinding — it would collide with Omarchy
 defaults or the user's own mappings. Expose the action and document the binding a user

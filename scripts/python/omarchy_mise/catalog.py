@@ -165,7 +165,7 @@ def _useful_error(stderr: str) -> str:
     return lines[-1] if lines else ""
 
 
-def _mise_binary() -> str:
+def mise_binary() -> str:
     found = shutil.which("mise")
     if not found:
         raise CatalogError("mise is not on PATH")
@@ -174,7 +174,7 @@ def _mise_binary() -> str:
 
 def read_tasks(project: Path, *, hidden: bool = False) -> list[dict[str, Any]]:
     """Run `mise tasks ls --json` inside a project and trim the result."""
-    command = [_mise_binary(), "--cd", str(project), "tasks", "ls", "--json"]
+    command = [mise_binary(), "--cd", str(project), "tasks", "ls", "--json"]
     if hidden:
         command.append("--hidden")
 

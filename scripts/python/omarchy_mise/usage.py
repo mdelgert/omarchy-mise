@@ -466,3 +466,55 @@ def parse(spec: str | None) -> list[dict[str, Any]]:
         elif node.name == "flag":
             arguments.append(_parse_flag(node))
     return arguments
+
+
+def missing_required(arguments: list[dict[str, Any]], values: dict[str, str]) -> list[str]:
+    """Names of required arguments the caller has not supplied a value for."""
+    missing = []
+    for argument in arguments:
+        if not argument.get("required"):
+            continue
+        if not str(values.get(str(argument.get("name")), "")).strip():
+            missing.append(str(argument.get("name")))
+    return missing
+
+
+def to_argv(arguments: list[dict[str, Any]], values: dict[str, str]) -> list[str]:
+    """Turn `{name: value}` into the argv a task expects.
+
+    Declaration order is preserved because a positional's position is its
+    meaning. A flag is emitted by the spelling it actually declared -- a
+    short-only flag has no `--name` form -- and a flag with no value name is a
+    switch, present or absent rather than carrying a value.
+
+    Empty values are omitted entirely rather than passed as "", so an optional
+    argument left blank falls through to the task's own default instead of
+    overriding it with nothing.
+    """
+    argv: list[str] = []
+    for argument in arguments:
+        raw = str(values.get(str(argument.get("name")), "")).strip()
+        spelling = argument.get("long") or argument.get("short")
+
+        if argument.get("kind") == "flag":
+            if not spelling:
+                continue
+            if argument.get("valueName") is None:
+                # A switch: its presence is the value.
+                if raw.lower() in {"1", "true", "yes", "on"}:
+                    argv.append(str(spelling))
+                continue
+            if raw:
+                argv.extend([str(spelling), raw])
+            continue
+
+        if not raw:
+            continue
+        # A variadic positional takes every whitespace-separated word; quoting
+        # for a value containing spaces is deliberately not invented here.
+        if argument.get("variadic"):
+            argv.extend(raw.split())
+        else:
+            argv.append(raw)
+
+    return argv

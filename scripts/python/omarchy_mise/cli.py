@@ -27,6 +27,14 @@ def _emit(payload: Any, compact: bool) -> None:
         print(json.dumps(payload, indent=2, sort_keys=True))
 
 
+def _name_value(text: str) -> tuple[str, str]:
+    """Parse a `NAME=VALUE` pair. The value may contain further `=`."""
+    name, separator, value = text.partition("=")
+    if not separator or not name.strip():
+        raise argparse.ArgumentTypeError(f"expected NAME=VALUE, got {text!r}")
+    return name.strip(), value
+
+
 def _config_path(args: argparse.Namespace) -> Path | None:
     return Path(args.config).expanduser() if args.config else None
 
@@ -60,6 +68,7 @@ def cmd_run(args: argparse.Namespace) -> int:
         args.project,
         args.task,
         args.args,
+        values=dict(args.arg or []),
         settings=settings,
         confirm=args.confirm,
         timeout=args.timeout,
@@ -171,6 +180,15 @@ def build_parser() -> argparse.ArgumentParser:
         "args",
         nargs="*",
         help="arguments passed to the task; prefix with -- if they look like flags",
+    )
+    run_parser.add_argument(
+        "--arg",
+        metavar="NAME=VALUE",
+        action="append",
+        type=_name_value,
+        help="supply an argument by name; repeatable. Ordered into argv against "
+        "the task's own usage spec, so the caller need not know whether it is "
+        "positional or which spelling a flag declared.",
     )
     run_parser.add_argument(
         "--confirm", action="store_true", help="allow a task whose risk is in run.confirm_risk"

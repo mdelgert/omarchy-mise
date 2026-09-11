@@ -292,3 +292,76 @@ class CatalogAttachmentTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class ArgvTests(unittest.TestCase):
+    """Turning editor values into argv. This lives in Python rather than QML
+    because it is the part with rules worth proving."""
+
+    def positional(self, **overrides: object) -> dict:
+        spec = {
+            "name": "name",
+            "kind": "positional",
+            "required": False,
+            "variadic": False,
+            "long": None,
+            "short": None,
+            "valueName": "name",
+        }
+        spec.update(overrides)
+        return spec
+
+    def flag(self, **overrides: object) -> dict:
+        spec = {
+            "name": "lines",
+            "kind": "flag",
+            "required": False,
+            "variadic": False,
+            "long": "--lines",
+            "short": None,
+            "valueName": "lines",
+        }
+        spec.update(overrides)
+        return spec
+
+    def test_positional_passes_the_value_through(self) -> None:
+        self.assertEqual(["Omarchy"], usage.to_argv([self.positional()], {"name": "Omarchy"}))
+
+    def test_declaration_order_is_preserved(self) -> None:
+        specs = [self.positional(name="first"), self.positional(name="second")]
+        self.assertEqual(["a", "b"], usage.to_argv(specs, {"second": "b", "first": "a"}))
+
+    def test_blank_value_is_omitted_so_the_task_default_applies(self) -> None:
+        self.assertEqual([], usage.to_argv([self.positional()], {"name": "   "}))
+        self.assertEqual([], usage.to_argv([self.positional()], {}))
+
+    def test_flag_emits_its_spelling_and_value(self) -> None:
+        self.assertEqual(["--lines", "50"], usage.to_argv([self.flag()], {"lines": "50"}))
+
+    def test_short_only_flag_uses_the_short_spelling(self) -> None:
+        spec = self.flag(long=None, short="-n")
+        self.assertEqual(["-n", "50"], usage.to_argv([spec], {"lines": "50"}))
+
+    def test_valueless_flag_is_a_switch(self) -> None:
+        spec = self.flag(valueName=None)
+        for truthy in ("1", "true", "TRUE", "yes", "on"):
+            with self.subTest(truthy):
+                self.assertEqual(["--lines"], usage.to_argv([spec], {"lines": truthy}))
+        for falsy in ("", "0", "false", "no"):
+            with self.subTest(falsy):
+                self.assertEqual([], usage.to_argv([spec], {"lines": falsy}))
+
+    def test_variadic_positional_splits_on_whitespace(self) -> None:
+        spec = self.positional(variadic=True)
+        self.assertEqual(["a", "b", "c"], usage.to_argv([spec], {"name": "a  b c"}))
+
+    def test_a_flag_with_no_spelling_is_skipped(self) -> None:
+        self.assertEqual([], usage.to_argv([self.flag(long=None, short=None)], {"lines": "50"}))
+
+    def test_missing_required_reports_blank_and_absent(self) -> None:
+        specs = [self.positional(required=True), self.flag(name="lines", required=True)]
+        self.assertEqual(["name", "lines"], usage.missing_required(specs, {"name": "  "}))
+
+    def test_missing_required_is_empty_when_satisfied(self) -> None:
+        spec = self.positional(required=True)
+        self.assertEqual([], usage.missing_required([spec], {"name": "x"}))

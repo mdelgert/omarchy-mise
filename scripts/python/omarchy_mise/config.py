@@ -28,10 +28,6 @@ DEFAULTS: dict[str, Any] = {
         # Directories searched for mise projects. Missing entries are skipped.
         "directories": [
             "~/.config/omarchy/plugins/io.github.mdelgert.omarchy-mise"
-            # ,"~/Source" 
-            # ,"~/Projects" 
-            # ,"~/src"
-            # ,"~/code"
             ],
         # How many levels below each entry to descend before giving up.
         "max_depth": 2,

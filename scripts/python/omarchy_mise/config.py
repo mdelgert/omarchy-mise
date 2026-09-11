@@ -30,10 +30,12 @@ DEFAULTS: dict[str, Any] = {
         # `DEFAULT_LABEL` in services/Plugin.js must match; test_config.py
         # fails if they drift.
         "label": "\uf487",
-        # Where the panel opens. "center" puts it in the middle of the screen
-        # the bar is on; "widget" anchors it under the bar button, which is
-        # wherever the user placed the widget. Centre is the default because
-        # the panel is a list you read, not a tooltip for the button.
+        # Where the panel opens:
+        #   "center"  middle of the screen, both axes
+        #   "bar"     horizontally centred but hard against the bar
+        #   "widget"  anchored under the bar button, wherever that sits
+        # Centre is the default because the panel is a list you read, not a
+        # tooltip for the button.
         "position": "center",
         # Panel size in logical pixels, before the host clamps it to what the
         # screen can hold. These are caps, not fixed sizes: a short list still
@@ -100,7 +102,7 @@ _POSITIVE_INTS = {
 }
 
 #: Where the panel may open.
-POSITIONS = ("center", "widget")
+POSITIONS = ("center", "bar", "widget")
 
 #: Bounds on ui.font_scale. Below this the panel is unreadable; above it a
 #: single row no longer fits the screen, and the host clamps it anyway.

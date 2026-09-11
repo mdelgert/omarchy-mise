@@ -25,7 +25,8 @@ Panel {
     // Appearance, all configurable: the panel is a list you read, so where it
     // opens and how big it is are the user's call, not the widget's position
     // in the bar. Sizes are caps -- a short list still draws short.
-    readonly property bool centred: !config || config.value("ui", "position", "center") === "center"
+    readonly property string placement: config ? config.value("ui", "position", "center") : "center"
+    readonly property bool centred: placement === "center" || placement === "bar"
     readonly property int panelWidth: config ? config.value("ui", "width", 420) : 420
     readonly property int panelHeight: config ? config.value("ui", "height", 520) : 520
     // A multiplier on the theme size rather than a replacement, so the panel
@@ -210,6 +211,25 @@ Panel {
         // Keys the field does not consume still bubble up to the catcher.
         focusTarget: filterField
         centerOnBar: root.centred
+
+        // `centerOnBar` means centred along the bar's own axis: with a top or
+        // bottom bar that is horizontal only, and the panel still sits hard
+        // against the bar. To centre it on the screen as well, push it down
+        // with the one lever the host exposes -- `gap`, the distance from the
+        // bar edge -- since cardOrigin is readonly.
+        //
+        // The offset is computed from the column's implicit height rather
+        // than from contentHeight, which would be a loop: gap feeds
+        // availableCardHeight, which feeds fittedContentHeight, which is
+        // where contentHeight comes from.
+        readonly property real estimatedHeight: Math.min(
+            Style.space(root.panelHeight),
+            column.implicitHeight + panel.verticalContentInset)
+
+        gap: root.placement === "center" && panel.screenH > 0
+            ? Math.max(Style.gapsOut, (panel.screenH - estimatedHeight) / 2 - panel.barH)
+            : Style.gapsOut
+
         contentWidth: panel.fittedContentWidth(Style.space(root.panelWidth))
         contentHeight: panel.fittedContentHeight(column.implicitHeight, Style.space(root.panelHeight))
 
@@ -257,6 +277,8 @@ Panel {
 
                 PanelSectionHeader {
                     id: header
+
+                    fontSize: root.captionSize
                     width: parent.width
                     text: root.catalog && root.catalog.taskCount > 0
                         ? root.catalog.taskCount + " TASKS"
@@ -272,6 +294,7 @@ Panel {
                     placeholderText: "Filter tasks"
                     foreground: root.foreground
                     font.family: root.fontFamily
+                    font.pixelSize: root.bodySize
                     onTextChanged: root.filter = text
                     // Arrow keys belong to the list even while typing, so the
                     // user never has to leave the filter to pick a result.
@@ -339,6 +362,8 @@ Panel {
                     task: root.editing
                     foreground: root.foreground
                     fontFamily: root.fontFamily
+                    bodySize: root.bodySize
+                    captionSize: root.captionSize
 
                     onAccepted: root.commitEditor()
                     onCancelled: root.cancelEditor()
@@ -350,6 +375,7 @@ Panel {
                     runner: runner
                     foreground: root.foreground
                     fontFamily: root.fontFamily
+                    captionSize: root.captionSize
                 }
 
                 ListView {
@@ -387,6 +413,7 @@ Panel {
                         text: section
                         foreground: ListView.view.rowForeground
                         fontFamily: ListView.view.rowFontFamily
+                        fontSize: ListView.view.rowCaptionSize
                     }
 
                     // The delegate reaches these through ListView.view rather
@@ -418,25 +445,6 @@ Panel {
                             anchors.fill: parent
                             radius: Style.space(4)
                             color: row.selected ? row.ListView.view.rowSelection : "transparent"
-                        }
-
-                        // Clicking a row selects it and runs it, the same path
-                        // Enter takes -- including the argument editor and the
-                        // confirmation for a risky task. A row belonging to a
-                        // project that cannot be read is selectable but inert,
-                        // because there is nothing there to run.
-                        MouseArea {
-                            anchors.fill: parent
-                            hoverEnabled: true
-                            cursorShape: row.unusable ? Qt.ArrowCursor : Qt.PointingHandCursor
-                            acceptedButtons: Qt.LeftButton
-
-                            onEntered: row.ListView.view.currentIndex = row.index
-                            onClicked: {
-                                row.ListView.view.currentIndex = row.index
-                                if (!row.unusable)
-                                    root.runSelected()
-                            }
                         }
 
                         Column {

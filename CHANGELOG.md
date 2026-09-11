@@ -8,11 +8,10 @@ All notable changes to this project are documented here. Versions follow
 ### Added
 
 - The panel's placement, size and font are configurable: `ui.position`
-  (`center`, now the default, or `widget`), `ui.width`, `ui.height`, and
-  `ui.font_scale`. The scale multiplies the Omarchy theme's size rather than
-  replacing it, so the panel keeps following the theme.
-- Clicking a task row runs it, taking the same path as Enter — including the
-  argument editor and the confirmation for a risky task. Hovering selects.
+  (`center`, now the default, `bar`, or `widget`), `ui.width`, `ui.height`, and
+  `ui.font_scale`. `center` centres on both axes. The scale multiplies the
+  Omarchy theme's size rather than replacing it, and reaches every string in
+  the panel — header, filter, list, argument prompts and status.
 
 - Running a task from the panel: `services/TaskRunner.qml` starts `omarchy-mise run`,
   parses the one JSON object it prints, and exposes the outcome; `components/TaskStatus.qml`

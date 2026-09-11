@@ -15,6 +15,9 @@ Item {
   property var task: null
   property color foreground: Color.foreground
   property string fontFamily: Style.font.family
+  // Passed in so ui.font_scale applies here too.
+  property real bodySize: Style.font.body
+  property real captionSize: Style.font.caption
 
   readonly property var arguments: task && Array.isArray(task.arguments) ? task.arguments : []
   // Qualified: a binding is a JS function, so a bare `arguments` resolves to
@@ -99,19 +102,25 @@ Item {
           elide: Text.ElideRight
           color: Qt.darker(root.foreground, 1.4)
           font.family: root.fontFamily
-          font.pixelSize: Style.font.caption
+          font.pixelSize: root.captionSize
         }
 
         TextField {
           id: input
 
           width: parent.width
-          text: root.values[field.modelData.name] || ""
+          // Seeded once, not bound. `text` reading root.values while
+          // onTextChanged writes back into it is a two-way binding on one
+          // value, which Qt reports as a loop and which wedged the panel's
+          // layout so it never mapped. The Repeater rebuilds its delegates
+          // when the task changes, so this re-seeds then.
+          Component.onCompleted: text = root.values[field.modelData.name] || ""
           placeholderText: field.modelData.valueName === null
             ? "true / false"
             : String(field.modelData.valueName || field.modelData.name)
           foreground: root.foreground
           font.family: root.fontFamily
+          font.pixelSize: root.bodySize
           onTextChanged: root.setValue(field.modelData.name, text)
 
           Keys.priority: Keys.BeforeItem

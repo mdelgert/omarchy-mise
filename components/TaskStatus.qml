@@ -11,6 +11,9 @@ Item {
   property var runner: null
   property color foreground: Color.foreground
   property string fontFamily: Style.font.family
+  // Passed in rather than read from Style directly, so ui.font_scale reaches
+  // every string in the panel and not just the list.
+  property real captionSize: Style.font.caption
 
   readonly property bool failed: runner
     && (runner.status === runner.statusFailed || runner.error !== "")
@@ -43,7 +46,7 @@ Item {
       wrapMode: Text.WordWrap
       color: root.failed ? Color.urgent : root.foreground
       font.family: root.fontFamily
-      font.pixelSize: Style.font.caption
+      font.pixelSize: root.captionSize
     }
 
     Text {
@@ -57,7 +60,7 @@ Item {
       elide: Text.ElideRight
       color: Qt.darker(root.foreground, 1.5)
       font.family: root.fontFamily
-      font.pixelSize: Style.font.caption
+      font.pixelSize: root.captionSize
     }
   }
 }

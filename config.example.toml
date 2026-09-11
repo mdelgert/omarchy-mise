@@ -39,7 +39,8 @@ label = ""
 max_tasks = 200
 
 # Where the panel opens.
-#   "center"  in the middle of the screen, just below the bar (the default)
+#   "center"  middle of the screen, both axes (the default)
+#   "bar"     horizontally centred, but sitting against the bar
 #   "widget"  anchored under the bar button, wherever you placed the widget
 position = "center"
 
@@ -50,7 +51,8 @@ height = 520
 
 # Multiplies the Omarchy theme's font size rather than replacing it, so the
 # panel keeps following your theme. 1.0 is the theme's own size; 1.5 is half
-# again as large. Allowed range is 0.5 to 3.0.
+# again as large. Allowed range is 0.5 to 3.0. Applies to every string in the
+# panel -- header, filter, task list, argument prompts and status alike.
 font_scale = 1.0
 
 [scan]

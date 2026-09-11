@@ -47,10 +47,10 @@ Integer, default `1`. A value higher than the plugin understands loads with a wa
 | --- | --- | --- | --- |
 | `label` | string | `""` (U+F487) | Shown in the bar. Any string: a glyph, a word, a letter, an emoji. Trimmed to 80 characters and elided to fit; a blank value falls back to the default. The default is a Nerd Font icon rather than a word — Omarchy pins fontconfig's `monospace` alias to a Nerd Font and draws its own bar and menu icons from that range, so it renders on every Omarchy install. Pick another from the [Nerd Fonts cheat sheet](https://www.nerdfonts.com/cheat-sheet) and paste the glyph, or use a `\uXXXX` / `\UXXXXXXXX` escape. `config.example.toml` lists the icons Omarchy itself uses. |
 | `max_tasks` | integer ≥ 1 | `200` | Hard ceiling on tasks loaded, so a large tree cannot stall the bar. Hitting it adds a `truncated` warning. |
-| `position` | `"center"` or `"widget"` | `"center"` | Where the panel opens. `center` puts it in the middle of the screen just below the bar; `widget` anchors it under the bar button. |
+| `position` | `"center"`, `"bar"` or `"widget"` | `"center"` | Where the panel opens. `center` is the middle of the screen on both axes; `bar` is horizontally centred but against the bar; `widget` anchors it under the bar button. |
 | `width` | integer ≥ 1 | `420` | Panel width cap in logical pixels. |
 | `height` | integer ≥ 1 | `520` | Panel height cap in logical pixels. A short list still draws short; the host clamps both to what the screen holds. |
-| `font_scale` | number 0.5–3.0 | `1.0` | Multiplies the Omarchy theme's font size. It scales rather than replaces, so the panel keeps following your theme. |
+| `font_scale` | number 0.5–3.0 | `1.0` | Multiplies the Omarchy theme's font size, applied to every string in the panel. It scales rather than replaces, so the panel keeps following your theme. |
 
 ### `[scan]`
 

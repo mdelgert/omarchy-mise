@@ -1,18 +1,23 @@
 import QtQuick
 import qs.Commons
 import qs.Ui
+import "services" as Services
 
 BarWidget {
     id: root
 
     moduleName: "io.github.mdelgert.omarchy-mise"
 
-    // Keep the starter passive: it proves discovery, theming, settings, and
-    // placement without introducing a global shortcut or subprocess lifecycle.
+    // Label precedence: the host's inline setting wins, because a user who set
+    // it in shell.json meant this bar instance specifically; then the config
+    // file, which applies everywhere; then the built-in default.
     readonly property string label: {
-        const configured = setting("label", "Mise")
+        const inline = setting("label", "")
+        const configured = typeof inline === "string" && inline.trim().length > 0
+            ? inline
+            : config.value("ui", "label", "Mise")
         return typeof configured === "string" && configured.trim().length > 0
-            ? configured.slice(0, 80)
+            ? configured.trim().slice(0, 80)
             : "Mise"
     }
 
@@ -20,6 +25,10 @@ BarWidget {
         ? barSize
         : Math.min(caption.implicitWidth + Style.space(12), Style.space(180))
     implicitHeight: barSize
+
+    Services.Config {
+        id: config
+    }
 
     Text {
         id: caption

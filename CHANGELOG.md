@@ -7,6 +7,10 @@ All notable changes to this project are documented here. Versions follow
 
 ### Added
 
+- The bar label now comes from `ui.label` in the configuration file, read through
+  `services/Config.qml`. Precedence is the host's inline `shell.json` setting, then
+  the config file, then the built-in default; an unreadable or invalid config falls
+  back to the default and logs the reason from the CLI.
 - `~/.config/omarchy-mise/config.toml` as the plugin's configuration: the directories
   to scan for mise projects, scan depth, task include/exclude globs, the bar label,
   and run limits. Documented in `docs/CONFIGURATION.md`, templated in
@@ -46,6 +50,10 @@ All notable changes to this project are documented here. Versions follow
   and the fixtures the plugin browses moved to `tasks/examples.toml` under the
   `example:` prefix (`omarchy:hello` is now `example:hello`, and so on).
 - `omarchy:check` now runs lint and tests as well as manifest validation.
+- `omarchy:check-desktop` lints every QML file rather than only the entry point, so a
+  service or component nothing imports yet cannot hide an error. It also demotes
+  `signal-handler-parameters`: Quickshell does not export `QProcess::ExitStatus` to
+  QML, and `Process.exited` is the only way to read an exit code.
 - Roadmap R2 and R5 no longer put testable logic in `Model.js`; this repository has
   no JavaScript test runner, so `usage`-string parsing moves to Python and QML trusts
   the CLI's payload. R4 and R5 are split into their Python and QML halves so the two

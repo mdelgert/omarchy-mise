@@ -220,3 +220,6 @@ __marimo__/
 # Project
 .ruff_cache/
 .taplo-cache/
+
+# Worktrees created for background agents
+.claude/worktrees/

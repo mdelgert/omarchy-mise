@@ -1,5 +1,6 @@
 import QtQuick
 import Quickshell.Io
+import "Plugin.js" as Plugin
 
 // Reads the plugin's configuration by asking its own CLI, which is the only
 // thing that knows the schema. QML never parses TOML and never touches the
@@ -25,16 +26,6 @@ Item {
   property int timeoutMs: 5000
 
   signal reloaded
-
-  // The plugin's own directory, so the CLI is found wherever the plugin is
-  // installed — a git clone under ~/.config/omarchy/plugins or a development
-  // symlink pointing anywhere else.
-  readonly property string pluginRoot: {
-    var here = String(Qt.resolvedUrl("."))
-    if (here.indexOf("file://") === 0)
-      here = here.substring(7)
-    return here.replace(/\/services\/?$/, "")
-  }
 
   function reload() {
     if (readProcess.running)
@@ -88,7 +79,7 @@ Item {
   Process {
     id: readProcess
 
-    command: [root.pluginRoot + "/bin/omarchy-mise", "--json", "config"]
+    command: Plugin.cli(Qt.resolvedUrl("."), ["--json", "config"])
 
     stdout: StdioCollector {
       waitForEnd: true

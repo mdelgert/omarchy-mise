@@ -7,6 +7,12 @@ All notable changes to this project are documented here. Versions follow
 
 ### Added
 
+- `services/TaskCatalog.qml`, the single owner of the task catalog, declared as the
+  plugin's `service` entry point so the host loads one for the whole shell rather
+  than one per monitor. It distinguishes idle, loading, ready, empty, error, and
+  cancelled; a newer refresh cancels the one in flight; a cancelled refresh keeps the
+  previous catalog rather than blanking it. Bar widgets subscribe through
+  `bar.shell.serviceFor()` and never start a catalog process of their own.
 - The bar label now comes from `ui.label` in the configuration file, read through
   `services/Config.qml`. Precedence is the host's inline `shell.json` setting, then
   the config file, then the built-in default; an unreadable or invalid config falls

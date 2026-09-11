@@ -30,6 +30,23 @@ BarWidget {
         id: config
     }
 
+    // The catalog is owned by this plugin's service entry point, so there is
+    // one of it for the whole shell rather than one per monitor. The widget
+    // subscribes; it never starts a catalog process itself.
+    readonly property var catalog: bar && bar.shell && typeof bar.shell.serviceFor === "function"
+        ? bar.shell.serviceFor(moduleName)
+        : null
+
+    onCatalogChanged: {
+        if (catalog)
+            console.log("omarchy-mise", "widget: catalog service resolved")
+        else if (bar && bar.shell)
+            // Only a real absence is worth reporting. This binding evaluates
+            // once before the host has injected `bar`, and warning then would
+            // put a false alarm in the log on every startup.
+            console.warn("omarchy-mise", "widget: catalog service is not available")
+    }
+
     Text {
         id: caption
 

@@ -7,9 +7,11 @@
   "license": "MIT",
   "description": "Browse and run mise tasks from the Omarchy shell.",
   "kinds": [
+    "service",
     "bar-widget"
   ],
   "entryPoints": {
+    "service": "services/TaskCatalog.qml",
     "barWidget": "Main.qml"
   },
   "barWidget": {

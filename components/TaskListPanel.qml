@@ -19,6 +19,21 @@ Panel {
     // The one TaskCatalog instance, injected rather than created: a panel per
     // monitor must not mean a catalog per monitor.
     property var catalog: null
+    // The resolved configuration service, injected by Main.qml.
+    property var config: null
+
+    // Appearance, all configurable: the panel is a list you read, so where it
+    // opens and how big it is are the user's call, not the widget's position
+    // in the bar. Sizes are caps -- a short list still draws short.
+    readonly property string placement: config ? config.value("ui", "position", "center") : "center"
+    readonly property bool centred: placement === "center" || placement === "bar"
+    readonly property int panelWidth: config ? config.value("ui", "width", 420) : 420
+    readonly property int panelHeight: config ? config.value("ui", "height", 520) : 520
+    // A multiplier on the theme size rather than a replacement, so the panel
+    // keeps following the Omarchy theme instead of pinning itself to a number.
+    readonly property real fontScale: config ? config.value("ui", "font_scale", 1.0) : 1.0
+    readonly property real bodySize: Style.font.body * fontScale
+    readonly property real captionSize: Style.font.caption * fontScale
 
     // The host routes an IPC target to exactly one handler, but a bar surface
     // exists per monitor. Letting each panel register the target would mean a
@@ -195,8 +210,28 @@ Panel {
         // on a callLater that would otherwise overwrite anything set here.
         // Keys the field does not consume still bubble up to the catcher.
         focusTarget: filterField
-        contentWidth: panel.fittedContentWidth(Style.space(420))
-        contentHeight: panel.fittedContentHeight(column.implicitHeight, Style.space(520))
+        centerOnBar: root.centred
+
+        // `centerOnBar` means centred along the bar's own axis: with a top or
+        // bottom bar that is horizontal only, and the panel still sits hard
+        // against the bar. To centre it on the screen as well, push it down
+        // with the one lever the host exposes -- `gap`, the distance from the
+        // bar edge -- since cardOrigin is readonly.
+        //
+        // The offset is computed from the column's implicit height rather
+        // than from contentHeight, which would be a loop: gap feeds
+        // availableCardHeight, which feeds fittedContentHeight, which is
+        // where contentHeight comes from.
+        readonly property real estimatedHeight: Math.min(
+            Style.space(root.panelHeight),
+            column.implicitHeight + panel.verticalContentInset)
+
+        gap: root.placement === "center" && panel.screenH > 0
+            ? Math.max(Style.gapsOut, (panel.screenH - estimatedHeight) / 2 - panel.barH)
+            : Style.gapsOut
+
+        contentWidth: panel.fittedContentWidth(Style.space(root.panelWidth))
+        contentHeight: panel.fittedContentHeight(column.implicitHeight, Style.space(root.panelHeight))
 
         PanelKeyCatcher {
             id: keyCatcher
@@ -241,6 +276,9 @@ Panel {
                 spacing: Style.space(8)
 
                 PanelSectionHeader {
+                    id: header
+
+                    fontSize: root.captionSize
                     width: parent.width
                     text: root.catalog && root.catalog.taskCount > 0
                         ? root.catalog.taskCount + " TASKS"
@@ -256,6 +294,7 @@ Panel {
                     placeholderText: "Filter tasks"
                     foreground: root.foreground
                     font.family: root.fontFamily
+                    font.pixelSize: root.bodySize
                     onTextChanged: root.filter = text
                     // Arrow keys belong to the list even while typing, so the
                     // user never has to leave the filter to pick a result.
@@ -268,11 +307,11 @@ Panel {
                     Keys.priority: Keys.BeforeItem
                     Keys.onPressed: function (event) {
                         if (confirmDialog.opened) {
-                            // The dialog is modal and answers first.
-                            if (confirmDialog.handleKey(event))
-                                event.accepted = true
-                            else
-                                event.accepted = true
+                            // The dialog is modal: it answers what it knows,
+                            // and swallows the rest so nothing reaches the
+                            // list or the filter behind it.
+                            confirmDialog.handleKey(event)
+                            event.accepted = true
                             return
                         }
 
@@ -298,7 +337,11 @@ Panel {
                     }
                 }
 
-                PanelSeparator { width: parent.width }
+                PanelSeparator {
+                    id: separator
+
+                    width: parent.width
+                }
 
                 Text {
                     width: parent.width
@@ -308,7 +351,7 @@ Panel {
                     wrapMode: Text.WordWrap
                     color: Qt.darker(root.foreground, 1.4)
                     font.family: root.fontFamily
-                    font.pixelSize: Style.font.body
+                    font.pixelSize: root.bodySize
                 }
 
                 ParameterEditor {
@@ -319,23 +362,40 @@ Panel {
                     task: root.editing
                     foreground: root.foreground
                     fontFamily: root.fontFamily
+                    bodySize: root.bodySize
+                    captionSize: root.captionSize
 
                     onAccepted: root.commitEditor()
                     onCancelled: root.cancelEditor()
                 }
 
                 TaskStatus {
+                    id: status
                     width: parent.width
                     runner: runner
                     foreground: root.foreground
                     fontFamily: root.fontFamily
+                    captionSize: root.captionSize
                 }
 
                 ListView {
                     id: list
 
                     width: parent.width
-                    height: Math.min(contentHeight, Style.space(380))
+                    // Everything above the list has a height that does not
+                    // depend on the list, so the space left for it can be
+                    // measured without the panel's own height feeding back
+                    // into the column that determines it. Binding to the
+                    // panel height directly would be a loop, and hard-coding
+                    // a cap -- as this did -- overflowed the border as soon
+                    // as ui.height was set smaller than the cap.
+                    readonly property real chrome: header.height + filterField.height
+                        + editor.height + status.height + separator.height
+                        + column.spacing * 5
+                    readonly property real room: Math.max(
+                        Style.space(72), Style.space(root.panelHeight) - chrome)
+
+                    height: Math.min(contentHeight, room)
                     visible: root.rows.length > 0
                     model: root.rows
                     clip: true
@@ -353,6 +413,7 @@ Panel {
                         text: section
                         foreground: ListView.view.rowForeground
                         fontFamily: ListView.view.rowFontFamily
+                        fontSize: ListView.view.rowCaptionSize
                     }
 
                     // The delegate reaches these through ListView.view rather
@@ -361,6 +422,8 @@ Panel {
                     property color rowForeground: root.foreground
                     property string rowFontFamily: root.fontFamily
                     property color rowSelection: Style.selectionFillFor(root.foreground, Color.accent)
+                    property real rowBodySize: root.bodySize
+                    property real rowCaptionSize: root.captionSize
 
                     delegate: Item {
                         id: row
@@ -405,7 +468,7 @@ Panel {
                                 elide: Text.ElideRight
                                 color: row.unusable ? Color.urgent : row.ListView.view.rowForeground
                                 font.family: row.ListView.view.rowFontFamily
-                                font.pixelSize: Style.font.body
+                                font.pixelSize: row.ListView.view.rowBodySize
                             }
 
                             Text {
@@ -418,7 +481,7 @@ Panel {
                                 elide: Text.ElideRight
                                 color: Qt.darker(row.ListView.view.rowForeground, 1.5)
                                 font.family: row.ListView.view.rowFontFamily
-                                font.pixelSize: Style.font.caption
+                                font.pixelSize: row.ListView.view.rowCaptionSize
                             }
                         }
                     }

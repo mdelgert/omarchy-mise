@@ -355,6 +355,15 @@ class ArgvTests(unittest.TestCase):
         spec = self.positional(variadic=True)
         self.assertEqual(["a", "b", "c"], usage.to_argv([spec], {"name": "a  b c"}))
 
+    def test_a_blank_positional_before_a_filled_one_holds_its_place(self) -> None:
+        # Dropping the gap would bind "x" to `first`, which is a different run.
+        specs = [self.positional(name="first"), self.positional(name="second")]
+        self.assertEqual(["", "x"], usage.to_argv(specs, {"first": "  ", "second": "x"}))
+
+    def test_trailing_blank_positionals_are_still_omitted(self) -> None:
+        specs = [self.positional(name="first"), self.positional(name="second")]
+        self.assertEqual(["x"], usage.to_argv(specs, {"first": "x", "second": ""}))
+
     def test_a_flag_with_no_spelling_is_skipped(self) -> None:
         self.assertEqual([], usage.to_argv([self.flag(long=None, short=None)], {"lines": "50"}))
 

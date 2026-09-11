@@ -25,12 +25,5 @@
       "Edit(//home/*/.config/hypr/**)",
       "Edit(//home/*/.config/omarchy/**)"
     ]
-    //,
-    // "ask": [
-    //   "Bash(omarchy plugin remove*)",
-    //   "Bash(omarchy-restart-shell)",
-    //   "Bash(mise run omarchy:install)",
-    //   "Bash(mise run omarchy:uninstall)"
-    // ]
   }
 }

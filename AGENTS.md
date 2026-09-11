@@ -25,8 +25,11 @@ tree or a user's desktop configuration while developing this repository.
   QML thread, and never use `pkill` or `killall` for cleanup.
 - Store mutable state under plugin-specific XDG paths, never in the installed
   checkout. Preserve unrelated user configuration on upgrade or removal.
-- Do not add global keybindings. Expose shell actions and document optional bindings
-  so the plugin cannot conflict with existing mappings.
+- Never install a global keybinding automatically. Installing, enabling, or loading
+  the plugin must not create one. A binding is only ever added by an explicit user
+  command (`omarchy-mise bind`), which refuses a combination another binding already
+  holds, writes one delimited block, and can remove exactly that block again. Nothing
+  else in this repository may write to the user's Hyprland configuration.
 - Never trust a mise config on the user's behalf. An untrusted project is a state to
   report, with the `mise trust` command they can run.
 

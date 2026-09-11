@@ -3,6 +3,7 @@ import Quickshell.Io
 import qs.Commons
 import qs.Ui
 import "services" as Services
+import "services/Plugin.js" as Plugin
 
 BarWidget {
     id: root
@@ -16,10 +17,10 @@ BarWidget {
         const inline = setting("label", "")
         const configured = typeof inline === "string" && inline.trim().length > 0
             ? inline
-            : config.value("ui", "label", "Mise")
+            : config.value("ui", "label", Plugin.DEFAULT_LABEL)
         return typeof configured === "string" && configured.trim().length > 0
             ? configured.trim().slice(0, 80)
-            : "Mise"
+            : Plugin.DEFAULT_LABEL
     }
 
     // The catalog is owned by this plugin's service entry point, so there is
@@ -57,6 +58,7 @@ BarWidget {
         if ("anchorItem" in target) target.anchorItem = button
         if ("hostWidget" in target) target.hostWidget = root
         if ("catalog" in target) target.catalog = root.catalog
+        if ("config" in target) target.config = config
     }
 
     // Shape contract for shell.summon/hide/toggle routing: Bar.findPanelWidget

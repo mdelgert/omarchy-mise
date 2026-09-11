@@ -389,3 +389,12 @@ class ValuesTests(unittest.TestCase):
     def test_values_and_argv_can_be_combined(self) -> None:
         result = runner.run(self.root, "greet", ["extra"], values={"name": "Omarchy"})
         self.assertEqual(["Omarchy", "extra"], result["argv"][-2:])
+
+    def test_a_value_for_an_undeclared_argument_is_refused_not_dropped(self) -> None:
+        # Silently ignoring it would report a successful run of something the
+        # caller did not ask for.
+        result = runner.run(self.root, "greet", values={"nmae": "Omarchy"})
+        self.assertEqual("refused", result["status"])
+        self.assertEqual(runner.REASON_UNKNOWN_ARGUMENT, result["reason"])
+        self.assertIn("nmae", result["error"])
+        self.assertEqual([], result["argv"])

@@ -14,6 +14,11 @@ APP_NAME = "omarchy-mise"
 #: Overrides the resolved config file. Used by tests and by `--config`.
 CONFIG_ENV = "OMARCHY_MISE_CONFIG"
 
+#: Overrides the Hyprland bindings file the `bind` command edits. Needed
+#: because the real path is derived from XDG_CONFIG_HOME, and a test that moves
+#: XDG_CONFIG_HOME also blinds the `omarchy` command the conflict check asks.
+BINDINGS_ENV = "OMARCHY_MISE_BINDINGS"
+
 
 def xdg_dir(env: str, default: str) -> Path:
     """Return an XDG base directory, ignoring a relative (invalid) override."""
@@ -40,6 +45,14 @@ def config_file() -> Path:
     if override:
         return Path(override).expanduser()
     return config_home() / "config.toml"
+
+
+def hypr_bindings_file() -> Path:
+    """`~/.config/hypr/bindings.lua`, the file Omarchy reserves for overrides."""
+    override = os.environ.get(BINDINGS_ENV, "").strip()
+    if override:
+        return Path(override).expanduser()
+    return xdg_dir("XDG_CONFIG_HOME", ".config") / "hypr" / "bindings.lua"
 
 
 def repo_root() -> Path:

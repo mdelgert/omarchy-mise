@@ -13,15 +13,56 @@
 schema_version = 1
 
 [ui]
-# Text shown in the bar. Trimmed to 80 characters and elided to fit.
-label = "Mise"
+# Shown in the bar. Any string works: a glyph, a word, a single letter, an
+# emoji. Trimmed to 80 characters and elided to fit.
+#
+# The default is an icon rather than a word. Omarchy pins fontconfig's
+# `monospace` alias to a Nerd Font and draws its own bar and menu icons from
+# that range, so any Nerd Font glyph renders on every Omarchy install.
+#
+# Browse and copy one from the cheat sheet, then paste it between the quotes:
+#     https://www.nerdfonts.com/cheat-sheet
+# A `\uXXXX` or `\UXXXXXXXX` escape works too, if pasting a glyph is awkward:
+#     label = "\uF487"   # identical to the default below
+#
+# Icons Omarchy itself uses, if you want one that matches the rest of the bar:
+#     label = ""   # rocket         -- the default
+#     label = "󱓞"   # rocket launch  (Omarchy's "Trigger")
+#     label = ""   # process        (Omarchy's "Process")
+#     label = ""   # cog / service  (Omarchy's "Service")
+#     label = "󰵮"   # code braces    (Omarchy's "Development")
+#     label = "󰍜"   # list           (Omarchy's "Menu Bar")
+#     label = "Mise"    # plain text, if you would rather have a word
+label = ""
+
 # Hard ceiling on how many tasks are loaded, so a large tree cannot stall the bar.
 max_tasks = 200
 
+# Where the panel opens.
+#   "center"  middle of the screen, both axes (the default)
+#   "bar"     horizontally centred, but sitting against the bar
+#   "widget"  anchored under the bar button, wherever you placed the widget
+position = "center"
+
+# Panel size in logical pixels. These are caps, not fixed sizes: a short list
+# still draws a short panel, and the host clamps both to what the screen holds.
+width = 420
+height = 520
+
+# Multiplies the Omarchy theme's font size rather than replacing it, so the
+# panel keeps following your theme. 1.0 is the theme's own size; 1.5 is half
+# again as large. Allowed range is 0.5 to 3.0. Applies to every string in the
+# panel -- header, filter, task list, argument prompts and status alike.
+font_scale = 1.0
+
 [scan]
 # Directories searched for mise projects. `~` and $VARS are expanded, and
-# entries that do not exist are skipped without an error.
-directories = ["~/Source", "~/Projects", "~/src", "~/code"]
+# entries that do not exist are skipped without an error. There is no built-in
+# default, so this list is the whole of what gets scanned: an empty one means no
+# tasks. It starts as the plugin's own install, which is a mise project itself,
+# so a fresh install has something to show. Replace it with your own, e.g.
+#   directories = ["~/Source", "~/Projects", "~/src", "~/code"]
+directories = ["~/.config/omarchy/plugins/io.github.mdelgert.omarchy-mise"]
 # How many levels below each directory to descend. A directory that is itself a
 # mise project is never descended into.
 max_depth = 2

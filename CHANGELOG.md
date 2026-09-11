@@ -7,6 +7,63 @@ All notable changes to this project are documented here. Versions follow
 
 ### Added
 
+- The panel's placement, size and font are configurable: `ui.position`
+  (`center`, now the default, `bar`, or `widget`), `ui.width`, `ui.height`, and
+  `ui.font_scale`. `center` centres on both axes. The scale multiplies the
+  Omarchy theme's size rather than replacing it, and reaches every string in
+  the panel — header, filter, list, argument prompts and status.
+
+- Running a task from the panel: `services/TaskRunner.qml` starts `omarchy-mise run`,
+  parses the one JSON object it prints, and exposes the outcome; `components/TaskStatus.qml`
+  shows a one-line summary plus the last few lines of output. Every decision that
+  matters — whether the task exists, whether the project is trusted, the risk
+  confirmation, the timeout, the output cap — stays in the CLI. A task whose risk is
+  in `run.confirm_risk` is refused first and only retried with `--confirm` after a
+  `ConfirmDialog` is answered, so nothing is spawned before a human agrees.
+- `components/ParameterEditor.qml`, an inline form for the arguments a task declares.
+  It collects `{name: value}` and nothing else; `omarchy-mise run --arg NAME=VALUE`
+  (new, repeatable) orders the values into argv against the task's own usage spec, so
+  the widget never has to know whether an argument is positional or which spelling a
+  flag declared. A required argument left blank, a name the task does not declare,
+  and a `usage` spec that cannot be parsed are all refused before mise is spawned.
+- A documented keybinding for the panel in `README.md`, routed through
+  `omarchy-shell shell toggle` so the host picks which monitor's copy to act on.
+- `~/.config/omarchy-mise/config.toml` is now created automatically: by
+  `mise run omarchy:install`, and by `services/TaskCatalog.qml` the first time the
+  service loads, which is the earliest moment a plugin added with `omarchy plugin add`
+  can write anything (Omarchy deliberately runs no plugin code at install time).
+  Neither path overwrites an existing file, so an edited config survives a reinstall.
+
+- `omarchy-mise bind` / `unbind` / `bind --status`, and the matching `omarchy:bind`,
+  `omarchy:unbind`, and `omarchy:bind-status` tasks: the optional keybinding for the
+  task browser, added and removed on request. The plugin still installs no binding
+  automatically. `bind` defaults to `SUPER + M`, refuses a combination another binding
+  already holds and names the owner (`--force` overrides it and writes the `hl.unbind`
+  Omarchy requires first), backs `~/.config/hypr/bindings.lua` up, and writes one
+  delimited block that `unbind` removes byte for byte. The combination is validated to
+  modifiers plus a single key before it reaches a Lua literal. `doctor` reports whether
+  the binding is installed. `OMARCHY_MISE_BINDINGS` overrides the file, for tests.
+
+### Changed
+
+- The bar label defaults to an icon instead of the word "Mise": U+F487, a rocket and
+  one of the glyphs Omarchy's own menu draws. Omarchy pins
+  fontconfig's `monospace` alias to a Nerd Font and draws its own bar and menu icons
+  from that range, so it renders everywhere without this plugin shipping a font. Any
+  string still works, and `config.example.toml` links the Nerd Fonts cheat sheet and
+  lists the icons Omarchy itself uses. `DEFAULT_LABEL` in `services/Plugin.js` is the
+  QML-side fallback; a test fails if it drifts from the Python default.
+- `scan.directories` no longer has a built-in default. Guessing at a layout meant
+  scanning directories the user never named, so the list now starts empty in Python
+  and the starter `config.example.toml` is the only place a path is suggested — it
+  ships the plugin's own install, which is a mise project itself, so a fresh install
+  still has something to list. An empty list stays a warning naming the file to edit,
+  not an error.
+- `omarchy-mise doctor` no longer fails when `scan.directories` is unconfigured. With
+  no built-in default that is the state every fresh install starts in, so the check
+  now reports it as a warning naming the config file and exits 0; a directory that
+  was named and is not there still fails.
+
 - Task argument parsing: `scripts/python/omarchy_mise/usage.py` turns a task's `usage`
   string into a structured list, and every task in `omarchy-mise catalog` now carries
   it under a new `arguments` key alongside the raw `usage` string. Each entry reports

@@ -489,9 +489,17 @@ def to_argv(arguments: list[dict[str, Any]], values: dict[str, str]) -> list[str
 
     Empty values are omitted entirely rather than passed as "", so an optional
     argument left blank falls through to the task's own default instead of
-    overriding it with nothing.
+    overriding it with nothing. A blank positional is only dropped when
+    nothing after it was filled in: dropping one in the middle would slide
+    every later value one slot to the left and bind it to the wrong argument,
+    so a gap is held back and emitted as "" once a later positional supplies a
+    value.
     """
     argv: list[str] = []
+    # Positionals that were left blank and may still turn out to be a gap
+    # rather than a trailing omission.
+    pending_gap: list[str] = []
+
     for argument in arguments:
         raw = str(values.get(str(argument.get("name")), "")).strip()
         spelling = argument.get("long") or argument.get("short")
@@ -509,7 +517,12 @@ def to_argv(arguments: list[dict[str, Any]], values: dict[str, str]) -> list[str
             continue
 
         if not raw:
+            pending_gap.append("")
             continue
+        # A later positional was filled in, so the blanks before it are gaps
+        # that have to hold their place.
+        argv.extend(pending_gap)
+        pending_gap.clear()
         # A variadic positional takes every whitespace-separated word; quoting
         # for a value containing spaces is deliberately not invented here.
         if argument.get("variadic"):
@@ -517,4 +530,5 @@ def to_argv(arguments: list[dict[str, Any]], values: dict[str, str]) -> list[str
         else:
             argv.append(raw)
 
+    # Anything still pending is trailing, and trailing blanks are omitted.
     return argv

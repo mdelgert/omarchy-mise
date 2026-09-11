@@ -33,6 +33,8 @@ All notable changes to this project are documented here. Versions follow
   down the bar the widget runs in.
 - A test that every task has a metadata entry and every entry names a real task, so
   the two files cannot drift.
+- A *Working in parallel* section in the roadmap: the lane split by file ownership,
+  the two constraints on running lanes concurrently, and the worktree commands.
 - CI now runs on a concurrency group and tests against Python 3.11 and 3.13.
 
 ### Changed
@@ -44,6 +46,10 @@ All notable changes to this project are documented here. Versions follow
   and the fixtures the plugin browses moved to `tasks/examples.toml` under the
   `example:` prefix (`omarchy:hello` is now `example:hello`, and so on).
 - `omarchy:check` now runs lint and tests as well as manifest validation.
+- Roadmap R2 and R5 no longer put testable logic in `Model.js`; this repository has
+  no JavaScript test runner, so `usage`-string parsing moves to Python and QML trusts
+  the CLI's payload. R4 and R5 are split into their Python and QML halves so the two
+  can be owned separately.
 - `omarchy:check-desktop` gives `qmllint` a `qs`-rooted import path. Quickshell
   exposes the shell config root as the `qs` namespace, so the previous import path
   left every import, the `BarWidget` base type, and every inherited property

@@ -12,6 +12,57 @@ scope, the files it touches, and how to know it is finished. Every item inherits
 rules in [AGENTS.md](../AGENTS.md) and finishes with `mise run omarchy:check-desktop`
 passing plus a visual check on a running bar.
 
+## Working in parallel
+
+The items below form a dependency chain, so handing R1–R7 to seven agents produces
+seven conflicting edits to `Main.qml`. Split by *file ownership* instead. Three lanes
+never touch the same file:
+
+| Lane | Owns | Items | Needs a desktop |
+| --- | --- | --- | --- |
+| **A — QML** | `Main.qml`, `services/`, `components/` | R1 → R2 → R3 → 4b → 5b → R6 | Yes |
+| **B — argument parser** | `scripts/python/omarchy_mise/usage.py` | 5a | No |
+| **C — task runner** | `scripts/python/omarchy_mise/runner.py` | 4a | No |
+
+Lane A is strictly sequential: each item establishes something the next one uses, and
+R1 exists to set the process-ownership pattern the rest copy. Lanes B and C are pure
+Python with tests and can start immediately, in parallel with each other and with
+lane A.
+
+Both Python lanes touch `cli.py` to register a subcommand and `catalog.py` or its
+payload, so keep those edits additive and expect a small merge there. Nothing else
+overlaps.
+
+Two constraints on running lanes concurrently:
+
+- **Only one working tree can be installed at a time.** The plugin id is unique, so
+  `omarchy:install` from a second worktree relinks the first one out. Give the
+  install to whichever lane is doing QML; the Python lanes never need it.
+- **Visual verification is not parallelisable and is not an agent's job.** An agent
+  can get `omarchy:check-desktop` to pass; only a person can confirm the widget looks
+  right on a real bar. Merge a QML lane only after you have seen it running.
+
+Give each lane its own git worktree so the trees cannot collide:
+
+```sh
+claude --worktree lane-b            # new worktree + branch + session
+# or, by hand:
+git worktree add ../omarchy-mise-lane-b -b lane/usage-parser
+cd ../omarchy-mise-lane-b && mise install && claude
+```
+
+Run one in the background and check on it later:
+
+```sh
+claude --bg --worktree lane-c "Implement roadmap item 4a in docs/ROADMAP.md."
+claude agents        # list background sessions
+claude logs <id>     # read its output
+claude attach <id>   # take it over interactively
+```
+
+Each lane finishes the same way any change does: `mise run omarchy:check` green, a
+test for every behaviour, a `CHANGELOG.md` entry, then merge to `dev`.
+
 ---
 
 ## R1 — Read the configured label
@@ -39,8 +90,10 @@ the value.
 `bin/omarchy-mise catalog --json`, parses it, and exposes tasks, a loading state, and
 an error state. No UI.
 
-**Files.** `services/TaskCatalog.qml`, `Model.js` (pure parsing and validation),
-`manifest.json` if a service entry point is needed.
+**Files.** `services/TaskCatalog.qml`, `Model.js` (shaping already-valid JSON for the
+view), `manifest.json` if a service entry point is needed.
+
+**Depends on.** R1, for the process-ownership pattern.
 
 **Notes.** Refresh on demand and on a bounded interval, never on a tight loop. A
 replaced refresh cancels the one in flight. Distinguish empty, error, and cancelled —
@@ -48,9 +101,13 @@ they look the same to a user otherwise and each needs different wording. Carry t
 per-project `trusted` flag through; a `trusted: false` project is a state to render,
 not an error to swallow.
 
-**Done when.** Unit tests cover `Model.js` parsing (including a malformed payload and
-an untrusted project), and the service survives repeated creation and destruction with
-no leaked process.
+Validation belongs in the CLI, not in `Model.js`. This repository has no JavaScript
+test runner and is not getting one — `omarchy-mise catalog` already guarantees the
+payload's shape, so QML should trust it and fail visibly if it ever cannot parse it.
+
+**Done when.** The service survives repeated creation and destruction with no leaked
+process, renders a malformed payload as an error state rather than crashing, and
+carries `trusted: false` through to the view.
 
 ---
 
@@ -75,8 +132,10 @@ on a vertical bar; focus returns cleanly to the compositor on close.
 
 **Scope.** Run the selected task from the list and report the outcome.
 
-**Files.** `services/TaskRunner.qml`, `components/TaskStatus.qml`, and a `run`
-subcommand in `scripts/python/omarchy_mise/`.
+**Files.** `scripts/python/omarchy_mise/runner.py` plus a `run` subcommand and tests
+(4a); `services/TaskRunner.qml` and `components/TaskStatus.qml` (4b).
+
+**Depends on.** 4a depends on nothing. 4b depends on 4a and R3.
 
 **Notes.** This is the part that must not be rushed. Execution requires an explicit
 user action, never a hover or a focus change. Pass arguments as an argv array — never
@@ -95,15 +154,23 @@ process survives the shell restarting.
 
 **Scope.** Prompt for the arguments a task declares in its `usage` string.
 
-**Files.** `components/ParameterEditor.qml`, `Model.js`.
+**Files.** `scripts/python/omarchy_mise/usage.py` and its tests (5a);
+`components/ParameterEditor.qml` (5b).
 
-**Notes.** The catalog already carries each task's raw `usage`; parsing it into
-required, optional, default, flag, and choice arguments belongs in `Model.js` where it
-can be tested. The fixtures in `tasks/examples.toml` cover the required and defaulted
-cases. Required arguments block the run; defaults pre-fill.
+**Depends on.** 5a depends on nothing. 5b depends on 5a and R4.
 
-**Done when.** `example:param` prompts and refuses to run empty, `example:param-default`
-pre-fills `world` and accepts an override, and `Model.js` has tests for each shape.
+**Notes.** Split this in two. The catalog already carries each task's raw `usage`
+string; parsing it into required, optional, default, flag, and choice arguments is
+pure string work, so it belongs in Python next to the tests that can prove it — not
+in `Model.js`, which nothing in this repository can test. Emit the result as a
+structured `arguments` list on each task, additively, so the existing JSON stays
+valid. The fixtures in `tasks/examples.toml` cover the required and defaulted cases.
+Required arguments block the run; defaults pre-fill.
+
+**Done when.** `omarchy-mise catalog` reports structured arguments for
+`example:param` and `example:param-default` with tests for each `usage` shape, then
+the editor prompts, refuses to run an empty required argument, pre-fills `world`, and
+accepts an override.
 
 ---
 

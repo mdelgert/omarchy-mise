@@ -28,3 +28,15 @@ icon = "snake"
 risk = "low"
 enabled = true
 tags = ["omarchy","python"]
+
+[_.tasks."omarchy:check"]
+icon = "check"
+risk = "low"
+enabled = true
+tags = ["omarchy", "validation", "portable"]
+
+[_.tasks."omarchy:check-desktop"]
+icon = "desktop"
+risk = "low"
+enabled = true
+tags = ["omarchy", "validation", "desktop"]

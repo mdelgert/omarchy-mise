@@ -19,3 +19,35 @@ file = "scripts/bash/all-metadata.sh"
 ["omarchy:python"]
 description = "Task runs python meta script"
 run = "python scripts/python/all_metadata.py"
+
+["omarchy:check"]
+description = "Run portable repository and plugin checks"
+run = '''
+set -eu
+export PYTHONDONTWRITEBYTECODE=1
+mise tasks validate
+python3 scripts/python/validate_manifest.py
+python3 -m unittest discover -s tests
+python3 scripts/python/all_metadata.py >/dev/null
+'''
+
+["omarchy:check-desktop"]
+description = "Run checks that require an Omarchy desktop installation"
+depends = ["omarchy:check"]
+run = '''
+set -eu
+command -v omarchy-plugin-validate >/dev/null 2>&1 || {
+  printf '%s\n' 'omarchy-plugin-validate is required' >&2
+  exit 1
+}
+QMLLINT="$(command -v qmllint || true)"
+if [ -z "$QMLLINT" ] && [ -x /usr/lib/qt6/bin/qmllint ]; then
+  QMLLINT=/usr/lib/qt6/bin/qmllint
+fi
+if [ -z "$QMLLINT" ]; then
+  printf '%s\n' 'qmllint is required' >&2
+  exit 1
+fi
+omarchy-plugin-validate .
+"$QMLLINT" -I /usr/share/omarchy/shell Main.qml
+'''

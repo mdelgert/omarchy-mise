@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "id": "io.github.mdelgert.omarchy-mise",
+  "name": "Omarchy Mise",
+  "version": "0.1.0",
+  "author": "Matthew Elgert",
+  "license": "MIT",
+  "description": "Browse and run mise tasks from the Omarchy shell.",
+  "kinds": [
+    "bar-widget"
+  ],
+  "entryPoints": {
+    "barWidget": "Main.qml"
+  },
+  "barWidget": {
+    "displayName": "Omarchy Mise",
+    "description": "Browse and run mise tasks from the Omarchy shell.",
+    "category": "Utilities",
+    "allowMultiple": false,
+    "defaultSection": "right"
+  }
+}

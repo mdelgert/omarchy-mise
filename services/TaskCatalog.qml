@@ -185,7 +185,32 @@ Item {
     onTriggered: root.refresh()
   }
 
-  Component.onCompleted: root.refresh()
+  // Omarchy runs no plugin code at install time -- deliberately, since a
+  // plugin is unsandboxed -- so `omarchy plugin add` cannot create the config
+  // file. The first time the service loads is the earliest moment this plugin
+  // can, and `config --init` never clobbers an existing file, so running it on
+  // every startup is idempotent. Independent of the first refresh: a config
+  // that cannot be written is a worse list, never no list.
+  Process {
+    id: seedConfig
+
+    command: Plugin.cli(Qt.resolvedUrl("."), ["config", "--init"])
+
+    stderr: StdioCollector {
+      waitForEnd: true
+    }
+
+    onExited: function (exitCode, exitStatus) {
+      if (exitCode !== 0)
+        console.warn("omarchy-mise", "config --init:",
+                     String(seedConfig.stderr.text || "").trim() || "exited " + exitCode)
+    }
+  }
+
+  Component.onCompleted: {
+    seedConfig.running = true
+    root.refresh()
+  }
 
   Component.onDestruction: {
     deadline.stop()

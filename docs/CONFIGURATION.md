@@ -20,9 +20,16 @@ bin/omarchy-mise config           # show what actually resolved
 development checkout, `mise run omarchy:config-init` and `mise run omarchy:config` do
 the same thing.
 
-The file is optional: with no config the defaults below apply. Unknown sections and
-keys load with a warning rather than an error, so a file written for a newer version
-still works; a wrong type is a hard error naming the key.
+The plugin creates the file from `config.example.toml` the first time its service
+loads, and `mise run omarchy:install` writes it too. Neither ever overwrites an
+existing file, so an edited config survives every reinstall and upgrade. Omarchy runs
+no plugin code during `omarchy plugin add` — a plugin is unsandboxed, so that is
+deliberate — which is why the first load, rather than the install, is the earliest
+moment the file can appear.
+
+The file is still optional: with no config the defaults below apply. Unknown sections
+and keys load with a warning rather than an error, so a file written for a newer
+version still works; a wrong type is a hard error naming the key.
 
 ## Settings
 
@@ -41,7 +48,7 @@ Integer, default `1`. A value higher than the plugin understands loads with a wa
 
 | Key | Type | Default | Meaning |
 | --- | --- | --- | --- |
-| `directories` | list of strings | `["~/Source", "~/Projects", "~/src", "~/code"]` | Directories searched for mise projects. `~` and `$VARS` expand; entries that do not exist are skipped silently. |
+| `directories` | list of strings | `[]` | Directories searched for mise projects. `~` and `$VARS` expand; entries that do not exist are skipped silently. There is no built-in default — nothing is scanned unless this says so, so the plugin never reads directories you did not name. The starter config ships the plugin's own install here, so a fresh install has something to show; replace it with the directories your projects live in (for example `["~/Source", "~/Projects"]`). An empty list is not an error: the catalog returns no projects and a warning naming this file. |
 | `max_depth` | integer ≥ 1 | `2` | Levels below each entry to descend. A directory that is itself a project is never descended into. |
 | `follow_symlinks` | boolean | `false` | Follow symlinked directories while scanning. Off by default to avoid loops. |
 

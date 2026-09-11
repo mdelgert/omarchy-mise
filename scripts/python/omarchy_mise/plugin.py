@@ -82,6 +82,22 @@ def install(root: Path | None = None, *, section: str | None = None, enable: boo
         target.symlink_to(source, target_is_directory=True)
         message = f"linked: {target} -> {source}"
 
+    # A first install would otherwise run on the built-in defaults with no file
+    # to point at the user's own directories, and nothing else in the install
+    # path creates one. Writing the starter config here never clobbers an
+    # existing one, so a relink leaves a customised config untouched.
+    config_file = paths.config_file()
+    existed = config_file.is_file()
+    try:
+        config_module.write_default()
+    except OSError as error:
+        # A config that could not be written is worth saying out loud, but it
+        # is not a reason to leave the plugin half-installed.
+        message += f" (could not write {config_file}: {error})"
+    else:
+        if not existed:
+            message += f" (wrote {config_file})"
+
     rescan()
     if enable:
         _run(
@@ -173,12 +189,21 @@ def doctor(root: Path | None = None) -> dict[str, Any]:
         record("config loads", True, source_file)
         for warning in settings.get("_warnings", []):
             record("config warning", None, warning)
+        configured = settings.get("scan", {}).get("directories", [])
         roots = config_module.scan_roots(settings)
-        record(
-            "scan directories",
-            bool(roots),
-            ", ".join(str(item) for item in roots) or "none of the configured directories exist",
-        )
+        if roots:
+            record("scan directories", True, ", ".join(str(item) for item in roots))
+        elif configured:
+            record("scan directories", False, "none of the configured directories exist")
+        else:
+            # Nothing configured is the state a fresh install is in before the
+            # starter config is written, not a broken one. Naming a directory
+            # that does not exist is the real failure.
+            record(
+                "scan directories",
+                None,
+                f"none configured; set scan.directories in {paths.config_file()}",
+            )
     except config_module.ConfigError as error:
         record("config loads", False, str(error))
         roots = []

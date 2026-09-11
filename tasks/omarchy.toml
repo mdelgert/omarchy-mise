@@ -129,3 +129,11 @@ run = "bin/omarchy-mise config"
 ["omarchy:config-init"]
 description = "Write a starter config to ~/.config/omarchy-mise/config.toml"
 run = "bin/omarchy-mise config --init"
+
+["omarchy:plugin-install"]
+description = "Install the plugin from the GitHub repository"
+run = "omarchy plugin add https://github.com/mdelgert/omarchy-mise.git --enable"
+
+["omarchy:plugin-uninstall"]
+description = "Uninstall the plugin from the GitHub repository"
+run = "omarchy plugin remove io.github.mdelgert.omarchy-mise"

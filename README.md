@@ -18,15 +18,18 @@ Requires an Omarchy release with shell-plugin support.
 omarchy plugin add https://github.com/mdelgert/omarchy-mise.git --enable
 ```
 
-Then create the configuration and point it at the directories holding your mise
-projects:
+The plugin writes `~/.config/omarchy-mise/config.toml` the first time it loads, and
+never overwrites it afterwards. That file is the only place scan directories come
+from — there is no built-in default, so nothing outside it is ever read. It starts
+pointing at the plugin's own install so the panel is not empty; edit it to name the
+directories holding your mise projects. To create it up front instead:
 
 ```sh
 ~/.config/omarchy/plugins/io.github.mdelgert.omarchy-mise/bin/omarchy-mise config --init
 ```
 
-That writes `~/.config/omarchy-mise/config.toml`. From a development checkout the
-same command is `bin/omarchy-mise config --init`, or `mise run omarchy:config-init`.
+From a development checkout the same command is `bin/omarchy-mise config --init`, or
+`mise run omarchy:config-init`; `mise run omarchy:install` also writes it.
 
 See [docs/CONFIGURATION.md](docs/CONFIGURATION.md) for every setting.
 

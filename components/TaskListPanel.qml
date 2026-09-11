@@ -268,11 +268,11 @@ Panel {
                     Keys.priority: Keys.BeforeItem
                     Keys.onPressed: function (event) {
                         if (confirmDialog.opened) {
-                            // The dialog is modal and answers first.
-                            if (confirmDialog.handleKey(event))
-                                event.accepted = true
-                            else
-                                event.accepted = true
+                            // The dialog is modal: it answers what it knows,
+                            // and swallows the rest so nothing reaches the
+                            // list or the filter behind it.
+                            confirmDialog.handleKey(event)
+                            event.accepted = true
                             return
                         }
 

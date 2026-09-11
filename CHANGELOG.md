@@ -7,6 +7,40 @@ All notable changes to this project are documented here. Versions follow
 
 ### Added
 
+- Running a task from the panel: `services/TaskRunner.qml` starts `omarchy-mise run`,
+  parses the one JSON object it prints, and exposes the outcome; `components/TaskStatus.qml`
+  shows a one-line summary plus the last few lines of output. Every decision that
+  matters — whether the task exists, whether the project is trusted, the risk
+  confirmation, the timeout, the output cap — stays in the CLI. A task whose risk is
+  in `run.confirm_risk` is refused first and only retried with `--confirm` after a
+  `ConfirmDialog` is answered, so nothing is spawned before a human agrees.
+- `components/ParameterEditor.qml`, an inline form for the arguments a task declares.
+  It collects `{name: value}` and nothing else; `omarchy-mise run --arg NAME=VALUE`
+  (new, repeatable) orders the values into argv against the task's own usage spec, so
+  the widget never has to know whether an argument is positional or which spelling a
+  flag declared. A required argument left blank, a name the task does not declare,
+  and a `usage` spec that cannot be parsed are all refused before mise is spawned.
+- A documented keybinding for the panel in `README.md`, routed through
+  `omarchy-shell shell toggle` so the host picks which monitor's copy to act on.
+- `~/.config/omarchy-mise/config.toml` is now created automatically: by
+  `mise run omarchy:install`, and by `services/TaskCatalog.qml` the first time the
+  service loads, which is the earliest moment a plugin added with `omarchy plugin add`
+  can write anything (Omarchy deliberately runs no plugin code at install time).
+  Neither path overwrites an existing file, so an edited config survives a reinstall.
+
+### Changed
+
+- `scan.directories` no longer has a built-in default. Guessing at a layout meant
+  scanning directories the user never named, so the list now starts empty in Python
+  and the starter `config.example.toml` is the only place a path is suggested — it
+  ships the plugin's own install, which is a mise project itself, so a fresh install
+  still has something to list. An empty list stays a warning naming the file to edit,
+  not an error.
+- `omarchy-mise doctor` no longer fails when `scan.directories` is unconfigured. With
+  no built-in default that is the state every fresh install starts in, so the check
+  now reports it as a warning naming the config file and exits 0; a directory that
+  was named and is not there still fails.
+
 - Task argument parsing: `scripts/python/omarchy_mise/usage.py` turns a task's `usage`
   string into a structured list, and every task in `omarchy-mise catalog` now carries
   it under a new `arguments` key alongside the raw `usage` string. Each entry reports

@@ -58,6 +58,7 @@ STATUS_REFUSED = "refused"
 REASON_UNKNOWN_PROJECT = "unknown-project"
 REASON_UNKNOWN_TASK = "unknown-task"
 REASON_MISSING_ARGUMENT = "missing-argument"
+REASON_UNKNOWN_ARGUMENT = "unknown-argument"
 REASON_UNTRUSTED = "untrusted"
 REASON_UNREADABLE = "unreadable"
 REASON_CONFIRMATION_REQUIRED = "confirmation-required"
@@ -269,10 +270,23 @@ def run(
     if supplied:
         # read_tasks returns the raw mise fields; only catalog.build() attaches
         # parsed arguments, so this entry needs them attached explicitly.
-        catalog.attach_arguments(entry)
+        unparsed = catalog.attach_arguments(entry)
+        if unparsed:
+            # Without a spec there is nowhere to put the values. Dropping them
+            # and running anyway would look like a run of what was asked for.
+            return refuse(REASON_UNKNOWN_ARGUMENT, f"'{name}' {unparsed}", task=name)
         declared = entry.get("arguments")
         if not isinstance(declared, list):
             declared = []
+        unknown = sorted(set(supplied) - {str(argument.get("name")) for argument in declared})
+        if unknown:
+            # Silently ignoring a misspelled name would report success for a
+            # run that did not receive the value the caller supplied.
+            return refuse(
+                REASON_UNKNOWN_ARGUMENT,
+                f"'{name}' declares no argument named: {', '.join(unknown)}",
+                task=name,
+            )
         blank = usage.missing_required(declared, supplied)
         if blank:
             return refuse(

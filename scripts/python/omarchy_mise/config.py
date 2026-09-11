@@ -26,9 +26,14 @@ DEFAULTS: dict[str, Any] = {
     },
     "scan": {
         # Directories searched for mise projects. Missing entries are skipped.
-        "directories": [
-            "~/.config/omarchy/plugins/io.github.mdelgert.omarchy-mise"
-            ],
+        # Deliberately empty, and no path is hard-coded here: a default that
+        # guesses at someone's layout scans directories they never asked for,
+        # and a wrong guess is indistinguishable from a broken plugin. The
+        # starter config in `config.example.toml` is where a real entry lives,
+        # and the plugin writes that file on its first run, so an install still
+        # arrives with something to list. An empty list is not an error -- the
+        # catalog reports it as a warning naming the file to edit.
+        "directories": [],
         # How many levels below each entry to descend before giving up.
         "max_depth": 2,
         "follow_symlinks": False,

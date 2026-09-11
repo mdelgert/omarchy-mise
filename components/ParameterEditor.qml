@@ -17,7 +17,9 @@ Item {
   property string fontFamily: Style.font.family
 
   readonly property var arguments: task && Array.isArray(task.arguments) ? task.arguments : []
-  readonly property bool hasArguments: arguments.length > 0
+  // Qualified: a binding is a JS function, so a bare `arguments` resolves to
+  // that function's own arguments object rather than to the property above.
+  readonly property bool hasArguments: root.arguments.length > 0
 
   // name -> value, rebuilt whenever the task changes so one task's input can
   // never leak into another's run.
@@ -79,18 +81,18 @@ Item {
 
         function focusField() { input.forceActiveFocus() }
 
-        width: fields.width
+        width: parent.width
         spacing: Style.space(2)
 
         Text {
           width: parent.width
           // Argument names and help text come from a project's own config.
           text: {
-            const label = modelData.kind === "flag" && modelData.long
-              ? String(modelData.long)
-              : String(modelData.name)
-            const help = String(modelData.help || "")
-            const required = modelData.required ? " (required)" : ""
+            const label = field.modelData.kind === "flag" && field.modelData.long
+              ? String(field.modelData.long)
+              : String(field.modelData.name)
+            const help = String(field.modelData.help || "")
+            const required = field.modelData.required ? " (required)" : ""
             return help !== "" ? label + required + " — " + help : label + required
           }
           textFormat: Text.PlainText

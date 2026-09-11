@@ -14,14 +14,25 @@ schema_version = 1
 
 [ui]
 # Text shown in the bar. Trimmed to 80 characters and elided to fit.
-label = "Mise"
+# Can be any string, including Unicode characters.
+# This can be a single character, an emoji, or any other Unicode symbol.
+# For example, you could use an emoji like "🚀" or a single letter like "M".
+# https://www.nerdfonts.com/cheat-sheet
+# label = "Mise"
+#label = "\uf120"
+label = "󰑷"
+
 # Hard ceiling on how many tasks are loaded, so a large tree cannot stall the bar.
 max_tasks = 200
 
 [scan]
 # Directories searched for mise projects. `~` and $VARS are expanded, and
-# entries that do not exist are skipped without an error.
-directories = ["~/Source", "~/Projects", "~/src", "~/code"]
+# entries that do not exist are skipped without an error. There is no built-in
+# default, so this list is the whole of what gets scanned: an empty one means no
+# tasks. It starts as the plugin's own install, which is a mise project itself,
+# so a fresh install has something to show. Replace it with your own, e.g.
+#   directories = ["~/Source", "~/Projects", "~/src", "~/code"]
+directories = ["~/.config/omarchy/plugins/io.github.mdelgert.omarchy-mise"]
 # How many levels below each directory to descend. A directory that is itself a
 # mise project is never descended into.
 max_depth = 2

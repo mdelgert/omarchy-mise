@@ -4,7 +4,7 @@ from pathlib import Path
 import tempfile
 import unittest
 
-from omarchy_mise import config, paths
+from omarchy_mise import catalog, config, paths
 
 
 class ConfigTests(unittest.TestCase):
@@ -75,6 +75,24 @@ class ConfigTests(unittest.TestCase):
     def test_example_config_matches_the_schema(self) -> None:
         resolved = config.load(paths.repo_root() / "config.example.toml")
         self.assertEqual([], resolved["_warnings"])
+
+    def test_no_scan_directory_is_hard_coded_in_python(self) -> None:
+        # Guessing at someone's layout means scanning directories they never
+        # named. The starter config is where a suggestion belongs.
+        self.assertEqual([], config.defaults()["scan"]["directories"])
+
+    def test_the_starter_config_is_what_supplies_a_scan_directory(self) -> None:
+        resolved = config.load(paths.repo_root() / "config.example.toml")
+        self.assertNotEqual([], resolved["scan"]["directories"])
+
+    def test_no_scan_directories_is_a_warning_not_an_error(self) -> None:
+        payload = catalog.build(config.defaults())
+        self.assertEqual([], payload["projects"])
+        self.assertEqual(0, payload["taskCount"])
+        self.assertTrue(
+            any("scan.directories" in warning for warning in payload["warnings"]),
+            payload["warnings"],
+        )
 
     def test_defaults_are_not_shared_between_calls(self) -> None:
         first = config.defaults()

@@ -45,6 +45,6 @@ Keep unrelated formatting out of the diff; `git diff --check` should be clean.
 [docs/ROADMAP.md](docs/ROADMAP.md) lists the remaining v1 work in order, each item
 scoped with the files it touches and how to know it is finished. R1 is the smallest.
 
-Working with more than one person or agent at a time? Read *Working in parallel* at
-the top of the roadmap first: the items form a dependency chain, so the split that
-works is by file ownership, one git worktree per lane.
+Read *How to pick up the next item* at the top of the roadmap first. The remaining
+work is one sequential chain and should not be split across parallel agents; the
+section explains why and gives the branch-and-verify loop.

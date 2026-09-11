@@ -7,6 +7,13 @@ All notable changes to this project are documented here. Versions follow
 
 ### Added
 
+- Task argument parsing: `scripts/python/omarchy_mise/usage.py` turns a task's `usage`
+  string into a structured list, and every task in `omarchy-mise catalog` now carries
+  it under a new `arguments` key alongside the raw `usage` string. Each entry reports
+  `name`, `kind`, `required`, `default`, `help`, `variadic`, `choices`, and a flag's
+  `long`, `short`, `valueName`, and `negate`. A `usage` string that cannot be parsed
+  becomes an `error` on that one task, like an unreadable project, rather than
+  failing the catalog.
 - `~/.config/omarchy-mise/config.toml` as the plugin's configuration: the directories
   to scan for mise projects, scan depth, task include/exclude globs, the bar label,
   and run limits. Documented in `docs/CONFIGURATION.md`, templated in

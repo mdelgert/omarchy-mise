@@ -2,6 +2,16 @@
 description = "Simple hello task"
 run = "echo hello task"
 
+["omarchy:param"]
+description = "Task with a required name parameter"
+usage = 'arg "<name>" help="Name to greet"'
+run = 'echo "hello ${usage_name:?}"'
+
+["omarchy:param-default"]
+description = "Task with a name parameter that defaults to world"
+usage = 'arg "[name]" help="Name to greet" default="world"'
+run = 'echo "hello ${usage_name?}"'
+
 ["omarchy:bash"]
 description = "Task runs bash meta script"
 file = "scripts/bash/all-metadata.sh"
